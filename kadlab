@@ -5,12 +5,15 @@ compose=false   # -c    start many containers with docker compose
 one=false       # -o    run one single docker container
 stop=false      # -s    stop all docker containers
 remove=false    # -r    remove all docker containers
+build=false     # -b    build docker file
+nodes="5"
 
 # Parse
-while getopts "cosr" opt; do
+while getopts "c:osrb" opt; do
     case $opt in
         c)
             compose=true
+            nodes=$OPTARG
             ;;
         o)
             one=true
@@ -20,6 +23,9 @@ while getopts "cosr" opt; do
             ;;
         r)
             remove=true
+            ;;
+        b)
+            build=true
             ;;
     esac
 done
@@ -34,9 +40,14 @@ if [ "$remove" = true ]; then
     sudo docker rm -f $(sudo docker ps -aq)
 fi
 
+if [ "$build" = true ]; then
+    echo "##### Building image... #####"
+    sudo docker build . -t kadlab
+fi
+
 if [ "$compose" = true ]; then
-    echo "##### Starting many containers... #####"
-    sudo docker-compose --compatibility up -d
+    echo "##### Starting $nodes containers... #####"
+    sudo docker-compose --compatibility up -d --scale node="$nodes"
 fi
 
 if [ "$one" = true ]; then

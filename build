@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Builds a docker image with the given name, use 'kadlab' to work with the docker-compose file
-sudo docker build . -t $1
