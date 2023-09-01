@@ -1,4 +1,9 @@
-FROM alpine:latest
+FROM golang:alpine
+WORKDIR /app
+COPY . ./
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /kadlab
+CMD ["/kadlab"]
 
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
