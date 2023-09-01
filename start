@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# USAGE:
+compose=false   # -c    start many containers with docker compose
+one=false       # -o    run one single docker container
+stop=false      # -s    stop all docker containers
+remove=false    # -r    remove all docker containers
+
+# Parse
+while getopts "cosr" opt; do
+    case $opt in
+        c)
+            compose=true
+            ;;
+        o)
+            one=true
+            ;;
+        s)
+            stop=true
+            ;;
+        r)
+            remove=true
+            ;;
+    esac
+done
+
+if [ "$stop" = true ]; then
+    echo "##### Stopping all containers... #####"
+    sudo docker stop $(sudo docker ps -aq)
+fi
+
+if [ "$remove" = true ]; then
+    echo "##### Removing all containers... #####"
+    sudo docker rm -f $(sudo docker ps -aq)
+fi
+
+if [ "$compose" = true ]; then
+    echo "##### Starting many containers... #####"
+    sudo docker-compose --compatibility up -d
+fi
+
+if [ "$one" = true ]; then
+    echo "##### Starting one containers... #####"
+    sudo docker run kadlab
+fi
