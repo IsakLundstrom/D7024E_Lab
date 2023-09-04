@@ -6,10 +6,11 @@ one=false       # -o    run one single docker container
 stop=false      # -s    stop all docker containers
 remove=false    # -r    remove all docker containers
 build=false     # -b    build docker file
+network=false   # -n    stop network
 nodes="5"
 
 # Parse
-while getopts "c:osrb" opt; do
+while getopts "c:osrbn" opt; do
     case $opt in
         c)
             compose=true
@@ -26,6 +27,9 @@ while getopts "c:osrb" opt; do
             ;;
         b)
             build=true
+            ;; 
+        n)
+            network=true
             ;;
     esac
 done
@@ -38,6 +42,10 @@ fi
 if [ "$remove" = true ]; then
     echo "##### Removing all containers... #####"
     sudo docker rm -f $(sudo docker ps -aq)
+fi
+
+if [ "$network" = true ]; then
+    echo "##### Stopping the network... #####"
     sudo docker network rm d7024e_lab_kademlia_network
 fi
 
