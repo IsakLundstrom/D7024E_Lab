@@ -38,6 +38,7 @@ fi
 if [ "$remove" = true ]; then
     echo "##### Removing all containers... #####"
     sudo docker rm -f $(sudo docker ps -aq)
+    sudo docker network rm d7024e_lab_kademlia_network
 fi
 
 if [ "$build" = true ]; then

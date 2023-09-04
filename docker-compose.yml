@@ -30,4 +30,8 @@ services:
       
 networks:
   kademlia_network:
+   ipam:
+      driver: default
+      config:
+       - subnet: 10.10.0.0/16
 
