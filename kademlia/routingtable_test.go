@@ -1,4 +1,4 @@
-package kademlia
+package main
 
 import (
 	"fmt"

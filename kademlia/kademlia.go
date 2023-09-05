@@ -1,4 +1,4 @@
-package kademlia
+package main
 
 type Kademlia struct {
 }
