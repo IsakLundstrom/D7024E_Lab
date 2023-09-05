@@ -15,16 +15,32 @@ func Listen(ip string, port int) {
 func (network *Network) SendPingMessage(contact *Contact) {
 
 }
-func SendMsg() {
+func SendMsg(address string, msg string) {
 
-	connection, err := net.Dial("udp", "172.19.0.2:4000")
+	connection, err := net.Dial("tcp", address)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	connection.Write([]byte("Hello"))
+	connection.Write([]byte(msg))
 	connection.Close()
 
+}
+
+func Server() {
+	port, err := net.Listen("tcp", ":4000")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for {
+		connection, err := port.Accept()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Println(connection.RemoteAddr(), connection)
+	}
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {

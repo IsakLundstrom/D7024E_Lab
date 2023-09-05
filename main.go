@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"kadlab/kademlia"
 )
 
 func main() {
-    fmt.Println("hello world")
-    for {
-        time.Sleep(time.Second*10)
-        fmt.Print("-")
-    }
+	fmt.Println("hello world")
+	if kademlia.IsBootstrap() {
+		fmt.Println("IM BOOTERS")
+	} else {
+		fmt.Println("NOT BOOTSTRAp")
+	}
+	kademlia.Server()
+
 }
