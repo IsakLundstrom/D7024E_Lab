@@ -13,7 +13,7 @@ func main() {
 	fmt.Println("hello world")
 	if IsBootstrap() {
 		fmt.Println("IM BOOTERS")
-		myId = NewKademliaID(BootstrapId)
+		myId = NewKademliaID(BOOTSTRAP_ID)
 
 	} else {
 		fmt.Println("NOT BOOTSTRAp")

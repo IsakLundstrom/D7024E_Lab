@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-const BootstrapIp string = "10.10.0.2"
-const BootstrapId = "0000000000000000000000000000000000000000"
-const ipPrefix string = "10.10.0"
+const BOOTSTRAP_ID = "0000000000000000000000000000000000000000"
+const BOOTSTRAP_IP string = "10.10.0.2"
+const IP_PREFIX string = "10.10.0"
 
 func IsBootstrap() bool {
 	myIp, err := GetMyIp()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return myIp == BootstrapIp
+	return myIp == BOOTSTRAP_IP
 }
 
 func GetMyIp() (string, error) {
@@ -27,7 +27,7 @@ func GetMyIp() (string, error) {
 
 	for _, ip := range ips {
 		fmt.Println(ip.String())
-		if strings.HasPrefix(ip.String(), ipPrefix) {
+		if strings.HasPrefix(ip.String(), IP_PREFIX) {
 			return ip.String(), nil
 		}
 	}
