@@ -2,24 +2,31 @@
 
 # USAGE:
 compose=false   # -c    start many containers with docker compose
+swarm=false     # -s    start many containers with docker swarm
 one=false       # -o    run one single docker container
-stop=false      # -s    stop all docker containers
+stop=false      # -t    stop all docker containers
 remove=false    # -r    remove all docker containers
 build=false     # -b    build docker file
-network=false   # -n    stop network
-nodes="5"
+kill=false      # -k    kill all
+exec=false      # -e    start a terminal for given node ID
+id="" 
+nodes=""
 
 # Parse
-while getopts "c:osrbn" opt; do
+while getopts "c:s:otrbke:" opt; do
     case $opt in
         c)
             compose=true
             nodes=$OPTARG
             ;;
+        s)
+            swarm=true
+            nodes=$OPTARG
+            ;;
         o)
             one=true
             ;;
-        s)
+        t)
             stop=true
             ;;
         r)
@@ -28,8 +35,12 @@ while getopts "c:osrbn" opt; do
         b)
             build=true
             ;; 
-        n)
-            network=true
+        k)
+            kill=true
+            ;;
+        e)
+            exec=true
+            id=$OPTARG
             ;;
     esac
 done
@@ -44,9 +55,13 @@ if [ "$remove" = true ]; then
     sudo docker rm -f $(sudo docker ps -aq)
 fi
 
-if [ "$network" = true ]; then
-    echo "##### Stopping the network... #####"
-    sudo docker network rm d7024e_lab_kademlia_network
+if [ "$kill" = true ]; then
+    echo "##### Killing all containers... #####"
+    sudo docker rm -f $(sudo docker ps -aq)
+    echo "##### Killing service... #####"
+    sudo docker service rm $(sudo docker service ls -q)
+    echo "##### Killing service... #####"
+    sudo docker network rm $(sudo docker network ls -q)
 fi
 
 if [ "$build" = true ]; then
@@ -59,7 +74,21 @@ if [ "$compose" = true ]; then
     sudo docker-compose --compatibility up -d --scale node="$nodes"
 fi
 
+if [ "$swarm" = true ]; then
+    echo "##### Swarm init... #####"
+    sudo docker swarm init
+    echo "##### Starting service... #####"
+    sudo docker stack deploy -c docker-compose.yml kadlab
+    echo "##### Starting $nodes containers... #####"
+    sudo docker service scale kadlab_node=$nodes
+fi
+
 if [ "$one" = true ]; then
     echo "##### Starting one containers... #####"
     sudo docker run kadlab
+fi
+
+if [ "$exec" = true ]; then
+    echo "##### Starting terminal on node $id... #####"
+    sudo docker exec -it $id sh
 fi
