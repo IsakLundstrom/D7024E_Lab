@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"errors"
 	"log"
 	"net"
@@ -8,9 +9,11 @@ import (
 	"strings"
 )
 
-const BOOTSTRAP_ID = "0000000000000000000000000000000000000000"
-const BOOTSTRAP_IP string = "10.10.0.2"
+const PROTOCOL string = "tcp"
+const PORT string = "4000"
 const IP_PREFIX string = "10.10.0"
+const BOOTSTRAP_IP string = "10.10.0.2"
+const BOOTSTRAP_ID string = "0000000000000000000000000000000000000000"
 
 func IsBootstrap() bool {
 	myIp, err := GetMyIp()
@@ -30,4 +33,10 @@ func GetMyIp() (string, error) {
 		}
 	}
 	return "", errors.New("no ip")
+}
+
+func GetHash(data []byte) []byte{
+	hasher := sha1.New()
+	hasher.Write([] byte(data))
+	return hasher.Sum(nil)
 }

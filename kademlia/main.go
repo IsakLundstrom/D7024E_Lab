@@ -9,8 +9,8 @@ func main() {
 	fmt.Println("main starting...")
 	contact := CreateMyContact()
 	network := Network{contact}
-	go network.Listen()
 	node := Kademlia{*NewRoutingTable(contact), network}
+	go network.Listen(&node)
 	if !IsBootstrap() {
 		node.JoinNetwork()
 	}
