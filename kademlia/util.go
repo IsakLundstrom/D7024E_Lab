@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -26,7 +25,6 @@ func GetMyIp() (string, error) {
 	ips, _ := net.LookupIP(containerHostname)
 
 	for _, ip := range ips {
-		fmt.Println(ip.String())
 		if strings.HasPrefix(ip.String(), IP_PREFIX) {
 			return ip.String(), nil
 		}

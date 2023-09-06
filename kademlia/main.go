@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
@@ -27,6 +28,15 @@ func main() {
 	myContact = NewContact(myId, myIp)
 	myRoutingTable = NewRoutingTable(myContact)
 	fmt.Println(myRoutingTable)
-	Server()
+
+	go Server()
+
+	var network Network
+
+	for {
+		c := NewContact(NewKademliaID(BOOTSTRAP_ID), BOOTSTRAP_IP)
+		network.SendPingMessage(&c)
+		time.Sleep(time.Second*30)
+	}
 
 }
