@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
 	"log"
 	"net"
 )
@@ -34,7 +33,7 @@ func (network *Network) Listen() {
 			continue
 		}
 
-		fmt.Println("Received: ", rpc)
+		HandleRPC(rpc)
 	}
 }
 
