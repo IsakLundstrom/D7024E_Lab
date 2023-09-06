@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sort"
 )
 
@@ -70,4 +71,24 @@ func (candidates *ContactCandidates) Swap(i, j int) {
 // the Contact at index j
 func (candidates *ContactCandidates) Less(i, j int) bool {
 	return candidates.contacts[i].Less(&candidates.contacts[j])
+}
+
+func CreateMyContact() Contact{
+	var myId *KademliaID
+
+	if IsBootstrap() {
+		fmt.Println("IM BOOTERS")
+		myId = NewKademliaID(BOOTSTRAP_ID)
+
+	} else {
+		fmt.Println("NOT BOOTSTRAP")
+		myId = NewRandomKademliaID()
+	}
+
+	myIp, err := GetMyIp()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return NewContact(myId, myIp)
 }

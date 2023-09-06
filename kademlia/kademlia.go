@@ -1,6 +1,16 @@
 package main
 
+import (
+	"fmt"
+)
+
 type Kademlia struct {
+	table 	RoutingTable
+	network Network
+}
+
+func (kademlia *Kademlia) JoinNetwork() {
+	fmt.Println("TODO Joining...")
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) {

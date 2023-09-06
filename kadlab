@@ -58,10 +58,13 @@ fi
 if [ "$kill" = true ]; then
     echo "##### Killing all containers... #####"
     sudo docker rm -f $(sudo docker ps -aq)
+    sleep 1
     echo "##### Killing service... #####"
     sudo docker service rm $(sudo docker service ls -q)
-    echo "##### Killing service... #####"
+    sleep 1
+    echo "##### Killing network... #####"
     sudo docker network rm $(sudo docker network ls -q)
+    sleep 3
 fi
 
 if [ "$build" = true ]; then
@@ -80,6 +83,7 @@ if [ "$swarm" = true ]; then
     echo "##### Starting service... #####"
     sudo docker stack deploy -c docker-compose.yml kadlab
     echo "##### Starting $nodes containers... #####"
+    sleep 1
     sudo docker service scale kadlab_node=$nodes
 fi
 
