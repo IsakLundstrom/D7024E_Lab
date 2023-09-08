@@ -8,7 +8,7 @@ import (
 )
 
 type Network struct {
-	myContact Contact
+	myContact 	*Contact
 }
 
 func (network *Network) Listen(kademlia *Kademlia) {
@@ -35,33 +35,43 @@ func (network *Network) Listen(kademlia *Kademlia) {
 		}
 
 		//TODO handle rpc in own thread, MUST add mutex then	
-		network.handleRPC(rpc, kademlia)
+		network.handleRPC(rpc, kademlia) // TODO async
 	}
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {
-	fmt.Println("Pining", contact.Address)
-	network.sendRCP(contact.Address, RPC{PING, network.myContact, *contact.ID, KademliaID{}, nil, nil})
+	fmt.Println("Pinging", contact)
+	network.sendRCP(contact.Address, RPC{PING, *network.myContact, *contact.ID, KademliaID{}, nil, nil})
 }
 
 func (network *Network) SendPongMessage(contact *Contact) {
-	fmt.Println("Pinong", contact.Address)
-	network.sendRCP(contact.Address, RPC{PONG, network.myContact, *contact.ID, KademliaID{}, nil, nil})
+	fmt.Println("Ponging", contact)
+	network.sendRCP(contact.Address, RPC{PONG, *network.myContact, *contact.ID, KademliaID{}, nil, nil})
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
-	fmt.Println("Finding contact at", contact.Address)
-	network.sendRCP(contact.Address, RPC{FIND_NODE_REQ, network.myContact, *contact.ID, KademliaID{}, nil, nil})
+func (network *Network) SendStoreReqMessage(contact *Contact, hash KademliaID, data []byte) {
+	fmt.Println("Storing", data, "with hash", hash, "at", contact)
+	network.sendRCP(contact.Address, RPC{STORE_REQ, *network.myContact, *contact.ID, hash, data, nil})
+}
+
+func (network *Network) SendStoreRspMessage(contact *Contact) {
+	fmt.Println("Stored response from", contact)
+	network.sendRCP(contact.Address, RPC{STORE_RSP, *network.myContact, *contact.ID, KademliaID{}, nil, nil})
+}
+
+func (network *Network) SendFindContactReqMessage(contact *Contact, target *KademliaID) {
+	fmt.Println("Finding node", target, " at", contact)
+	network.sendRCP(contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, KademliaID{}, nil, nil})
+}
+
+func (network *Network) SendFindContactRspMessage(contact *Contact, target *KademliaID, nodes []Contact) {
+	fmt.Println("Returing nodes to", contact)
+	network.sendRCP(contact.Address, RPC{FIND_NODE_RSP, *network.myContact, *contact.ID, *target, nil, nil})
 }
 
 func (network *Network) SendFindDataMessage(contact *Contact, hash string) {
-	fmt.Println("Finding data at", contact.Address)
-	network.sendRCP(contact.Address, RPC{FIND_VALUE_REQ, network.myContact, *contact.ID, *NewKademliaID(hash), nil, nil})
-}
-
-func (network *Network) SendStoreMessage(contact *Contact, hash string, data []byte) {
-	fmt.Println("Storing at", contact.Address)
-	network.sendRCP(contact.Address, RPC{FIND_VALUE_REQ, network.myContact, *contact.ID, *NewKademliaID(hash), data, nil})
+	fmt.Println("Finding data at", contact)
+	network.sendRCP(contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *contact.ID, *NewKademliaIDString(hash), nil, nil})
 }
 
 func  (network *Network) sendRCP(address string, rcp RPC) {
@@ -82,29 +92,58 @@ func  (network *Network) sendRCP(address string, rcp RPC) {
 }
 
 func (network *Network) handleRPC(rpc RPC, kademlia *Kademlia) {
+	// Calculate distance from my ID to senders ID and update table
+	rpc.Sender.CalcDistance(kademlia.network.myContact.ID)
+	kademlia.table.AddContact(rpc.Sender)
+
+	// Handle all types of RCPs
 	switch rpc.Type {
 	case PING:
-		fmt.Println("Pinged", rpc.Sender.Address)
-		kademlia.table.AddContact(rpc.Sender)
+		fmt.Println("Pinged", rpc.Sender)
+
 		network.SendPongMessage(&rpc.Sender)
+
 	case PONG:
-		fmt.Println("Ponged", rpc.Sender.Address)
-		kademlia.table.AddContact(rpc.Sender)
+		fmt.Println("Ponged", rpc.Sender)
+
 	case STORE_REQ:
-		fmt.Println("Store request", rpc.Sender.Address)
+		fmt.Println("Store request", rpc.Sender)
+
+		kademlia.store[rpc.Hash] = rpc.Data
+		fmt.Println(kademlia.store) //TODO remove
+		network.SendStoreRspMessage(&rpc.Sender)
+
 	case STORE_RSP:
-		fmt.Println("Store response", rpc.Sender.Address)
+		fmt.Println("Store response", rpc.Sender)
+
 	case FIND_NODE_REQ:
-		fmt.Println("Find node request", rpc.Sender.Address)
+		fmt.Println("Find node request", rpc.Sender)
+
+		kClosestNodes := kademlia.table.FindClosestContacts(&rpc.TargetID, k)
+		network.SendFindContactRspMessage(&rpc.Sender, &rpc.TargetID, kClosestNodes)
+
 	case FIND_NODE_RSP:
-		fmt.Println("Find node response", rpc.Sender.Address)
+		fmt.Println("Find node response", rpc.Sender)
+		// LookupChannel <- struct {rpc.Sender; rpc.Nodes} LYCKA TILL :)
+
 	case FIND_VALUE_REQ:
-		fmt.Println("Find value request", rpc.Sender.Address)
+		fmt.Println("Find value request", rpc.Sender)
+
 	case FIND_VALUE_RSP:
-		fmt.Println("Find value response", rpc.Sender.Address)
+		fmt.Println("Find value response", rpc.Sender)
+
 	case UNDEFINED:
 		fallthrough
 	default:
 		log.Println("ERROR: undefined RPC type")
 	}
+}
+
+func contactInArray(contact Contact, list []Contact) bool {
+    for _, c := range list {
+        if c == contact {
+            return true
+        }
+    }
+    return false
 }

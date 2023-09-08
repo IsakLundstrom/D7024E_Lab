@@ -35,8 +35,9 @@ func GetMyIp() (string, error) {
 	return "", errors.New("no ip")
 }
 
-func GetHash(data []byte) []byte{
+func GetHash(data []byte) KademliaID{
 	hasher := sha1.New()
 	hasher.Write([] byte(data))
-	return hasher.Sum(nil)
+	hash := hasher.Sum(nil)
+	return *NewKademliaIDByte(hash)
 }

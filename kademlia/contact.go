@@ -78,7 +78,7 @@ func CreateMyContact() Contact{
 
 	if IsBootstrap() {
 		fmt.Println("IS boostrap")
-		myId = NewKademliaID(BOOTSTRAP_ID)
+		myId = NewKademliaIDString(BOOTSTRAP_ID)
 	} else {
 		fmt.Println("NOT boostrap")
 		myId = NewRandomKademliaID()
