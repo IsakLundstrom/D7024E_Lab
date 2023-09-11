@@ -2,7 +2,8 @@ FROM golang:alpine
 WORKDIR /app
 COPY go.mod ./
 RUN go mod download
-COPY /kademlia ./
+COPY /kademlia ./kademlia
+COPY /main ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /kadlab
 CMD ["/kadlab"]
 

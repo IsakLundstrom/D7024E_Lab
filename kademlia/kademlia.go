@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"fmt"
@@ -8,12 +8,18 @@ import (
 var k int = 20
 var alpha int = 3
 var lookupMutex sync.Mutex
+
 // var LookupChannel = make(chan struct {concact Contact, list []Contact}, alpha) utkommenterat
 
 type Kademlia struct {
-	table 	*RoutingTable
+	table   *RoutingTable
 	network *Network
-	store	map[KademliaID][]byte
+	store   map[KademliaID][]byte
+}
+
+func CreateKademlia(myContact *Contact, network *Network) Kademlia {
+	return Kademlia{NewRoutingTable(*myContact), network, map[KademliaID][]byte{}}
+
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
@@ -33,16 +39,16 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	// closestNode := Contact{} utkommenterat
 
 	// Get k closet nodes in my routing table
-	alphaClosestNodes := kademlia.table.FindClosestContacts(target.ID, alpha) 
+	alphaClosestNodes := kademlia.table.FindClosestContacts(target.ID, alpha)
 
-	// Send FIND_NODE to #alpha nodes 
+	// Send FIND_NODE to #alpha nodes
 	for _, node := range alphaClosestNodes {
 		// *kademlia.network.queried = append(*kademlia.network.queried, node)
 		shortList.list = append(shortList.list, ShortListItem{node, true, false})
 		go kademlia.network.SendFindContactReqMessage(&node, target.ID)
 	}
 
-	// contact, kContacts := <- LookupChannel 
+	// contact, kContacts := <- LookupChannel
 
 	// shortList.fill(kContacts)
 
@@ -71,9 +77,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	// 	go network.SendFindContactReqMessage(&node, &rpc.TargetID)
 	// 	count++
 	// }
-	
-
-
 
 	//TODO we expect a answer, maybe handle it?
 	return nil

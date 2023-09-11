@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"fmt"
@@ -73,7 +73,7 @@ func (candidates *ContactCandidates) Less(i, j int) bool {
 	return candidates.contacts[i].Less(&candidates.contacts[j])
 }
 
-func CreateMyContact() Contact{
+func CreateMyContact() Contact {
 	var myId *KademliaID
 
 	if IsBootstrap() {

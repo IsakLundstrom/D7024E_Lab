@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"encoding/gob"
@@ -8,11 +8,15 @@ import (
 )
 
 type Network struct {
-	myContact 	*Contact
+	myContact *Contact
+}
+
+func CreateNetwork(myContact *Contact) Network {
+	return Network{myContact}
 }
 
 func (network *Network) Listen(kademlia *Kademlia) {
-	port, err := net.Listen(PROTOCOL, ":" + PORT)
+	port, err := net.Listen(PROTOCOL, ":"+PORT)
 	if err != nil {
 		log.Println(err)
 		return
@@ -26,7 +30,6 @@ func (network *Network) Listen(kademlia *Kademlia) {
 
 		decoder := gob.NewDecoder(connection)
 		var rpc RPC
-	
 		// Decode the received data into the struct
 		err = decoder.Decode(&rpc)
 		if err != nil {
@@ -34,7 +37,7 @@ func (network *Network) Listen(kademlia *Kademlia) {
 			continue
 		}
 
-		//TODO handle rpc in own thread, MUST add mutex then	
+		//TODO handle rpc in own thread, MUST add mutex then
 		network.handleRPC(rpc, kademlia) // TODO async
 	}
 }
@@ -74,14 +77,13 @@ func (network *Network) SendFindDataMessage(contact *Contact, hash string) {
 	network.sendRCP(contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *contact.ID, *NewKademliaIDString(hash), nil, nil})
 }
 
-func  (network *Network) sendRCP(address string, rcp RPC) {
+func (network *Network) sendRCP(address string, rcp RPC) {
 	connection, err := net.Dial(PROTOCOL, fmt.Sprintf("%s:%s", address, PORT))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	encoder := gob.NewEncoder(connection)
-	
 	// Encode and send the struct
 	err = encoder.Encode(rcp)
 	if err != nil {
@@ -140,10 +142,10 @@ func (network *Network) handleRPC(rpc RPC, kademlia *Kademlia) {
 }
 
 func contactInArray(contact Contact, list []Contact) bool {
-    for _, c := range list {
-        if c == contact {
-            return true
-        }
-    }
-    return false
+	for _, c := range list {
+		if c == contact {
+			return true
+		}
+	}
+	return false
 }

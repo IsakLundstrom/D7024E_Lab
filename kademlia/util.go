@@ -1,4 +1,4 @@
-package main
+package kademlia
 
 import (
 	"crypto/sha1"
@@ -35,9 +35,9 @@ func GetMyIp() (string, error) {
 	return "", errors.New("no ip")
 }
 
-func GetHash(data []byte) KademliaID{
+func GetHash(data []byte) KademliaID {
 	hasher := sha1.New()
-	hasher.Write([] byte(data))
+	hasher.Write([]byte(data))
 	hash := hasher.Sum(nil)
 	return *NewKademliaIDByte(hash)
 }

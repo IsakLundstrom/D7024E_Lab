@@ -1,13 +1,13 @@
-package main
+package kademlia
 
 type ShortListItem struct {
-	contact		Contact
-	queried 	bool
-	responded	bool
+	contact   Contact
+	queried   bool
+	responded bool
 }
 
 type ShortList struct {
-	list 	[]ShortListItem
+	list []ShortListItem
 	//TODO mutex
 }
 

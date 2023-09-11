@@ -1,12 +1,12 @@
-package main
+package kademlia
 
 type RPC struct {
-	Type 		RPCType
-	Sender 		Contact
-	TargetID 	KademliaID
-	Hash		KademliaID
-	Data		[]byte
-	Nodes		[]Contact
+	Type     RPCType
+	Sender   Contact
+	TargetID KademliaID
+	Hash     KademliaID
+	Data     []byte
+	Nodes    []Contact
 }
 
 type RPCType int64
