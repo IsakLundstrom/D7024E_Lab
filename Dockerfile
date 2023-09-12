@@ -3,8 +3,11 @@ WORKDIR /app
 COPY go.mod ./
 RUN go mod download
 COPY /kademlia ./kademlia
-COPY /main ./
+COPY /main cli.sh ./
+COPY /cli ./cli
 RUN CGO_ENABLED=0 GOOS=linux go build -o /kadlab
+
+# RUN CGO_ENABLED=0 GOOS=linux go build -o /cli ./cli 
 CMD ["/kadlab"]
 
 # Add the commands needed to put your compiled go binary in the container and

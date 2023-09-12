@@ -18,6 +18,7 @@ func main() {
 		node.JoinNetwork()
 	}
 
+	go kademlia.CLIServer()
 	// temp code to send pings to bootstrap
 	for {
 		c := kademlia.NewContact(kademlia.NewKademliaIDString(kademlia.BOOTSTRAP_ID), kademlia.BOOTSTRAP_IP)
