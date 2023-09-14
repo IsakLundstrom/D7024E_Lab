@@ -82,10 +82,12 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	return nil
 }
 
-func (kademlia *Kademlia) LookupData(hash string) {
+func (kademlia *Kademlia) LookupData(hash string) []byte {
 	// TODO
+	return []byte("TODO")
 }
 
-func (kademlia *Kademlia) Store(data []byte) {
+func (kademlia *Kademlia) Store(data []byte) []byte {
 	// TODO
+	return []byte("TODO")
 }

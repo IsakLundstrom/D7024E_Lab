@@ -21,13 +21,36 @@ func main() {
 		fmt.Println("To many arguments")
 		return
 	}
+
 	switch args[1] {
 	case "ping":
-		fmt.Println("PINGING")
+		if len(args) != 3 {
+			fmt.Println("ping requires one and only one argument (address to ping)")
+			break
+		}
+		fmt.Println("ping call...")
 		CliSend("ping " + args[2])
 
-	}
+	case "put":
+		if len(args) != 3 {
+			fmt.Println("nothing to put")
+			break
+		}
+		fmt.Println("put call...")
+		CliSend("put " + args[2])
 
+	case "get":
+		if len(args) != 3 {
+			fmt.Println("need a hash to know what to get")
+		}
+		fmt.Println("get call...")
+		CliSend("get " + args[2])
+	case "exit":
+		fmt.Println("exit call...")
+		CliSend("exit ")
+	default:
+		fmt.Println("Invalid input!")
+	}
 }
 
 func CliSend(data string) {
@@ -39,6 +62,6 @@ func CliSend(data string) {
 	connection.Write([]byte(data))
 	response := make([]byte, 128)
 	connection.Read(response)
-	fmt.Println("Node response", string(response))
+	fmt.Println(string(response))
 	defer connection.Close()
 }
