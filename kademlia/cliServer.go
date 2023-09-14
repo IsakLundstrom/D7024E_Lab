@@ -27,14 +27,21 @@ func CLIServer(kademlia *Kademlia) {
 }
 
 func CliHandler(connection net.Conn, kademlia *Kademlia) {
+	defer connection.Close()
+	
 	b := make([]byte, 128)
 	connection.Read(b)
 	args := strings.SplitN(string(b), " ", 2)
 
 	switch args[0] {
 	case "ping":
-		// TODO: Implement response
-		connection.Write([]byte("pong"))
+		c := NewContact(NewKademliaIDString(BOOTSTRAP_ID), BOOTSTRAP_IP)
+		rpc := kademlia.network.SendPingMessage(&c)
+		if rpc.Type == PONG {
+			connection.Write([]byte("PONG"))
+		} else {
+			connection.Write([]byte("Connection timedout..."))
+		}
 	case "put":
 		fmt.Println("PUTTING")
 		res := kademlia.Store([]byte(args[1]))
@@ -53,7 +60,5 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	default:
 		fmt.Println("Invalid input!")
 	}
-
-	defer connection.Close()
 
 }

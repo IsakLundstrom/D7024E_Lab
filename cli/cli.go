@@ -10,7 +10,6 @@ import (
 func main() {
 	args := os.Args
 
-	fmt.Println("KWODIKAD")
 	fmt.Println(args, len(args))
 
 	if len(args) < 2 {
@@ -24,12 +23,9 @@ func main() {
 
 	switch args[1] {
 	case "ping":
-		if len(args) != 3 {
-			fmt.Println("ping requires one and only one argument (address to ping)")
-			break
-		}
-		fmt.Println("ping call...")
-		CliSend("ping " + args[2])
+
+		fmt.Println("pinging bootstrap...")
+		CliSend("ping " )
 
 	case "put":
 		if len(args) != 3 {
