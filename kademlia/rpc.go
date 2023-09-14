@@ -3,8 +3,7 @@ package kademlia
 type RPC struct {
 	Type     RPCType
 	Sender   Contact
-	TargetID KademliaID
-	Hash     KademliaID
+	TargetID KademliaID // TargetID is either the target node or target hash
 	Data     []byte
 	Nodes    []Contact
 }
@@ -22,3 +21,7 @@ const (
 	FIND_VALUE_REQ
 	FIND_VALUE_RSP
 )
+
+func UndefinedRPC() RPC {
+	return RPC{UNDEFINED, Contact{}, KademliaID{}, nil, nil}
+}

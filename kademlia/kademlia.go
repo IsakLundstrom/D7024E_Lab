@@ -23,7 +23,7 @@ func CreateKademlia(myContact *Contact, network *Network) Kademlia {
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
-	fmt.Println("TODO Joining...")
+	fmt.Println("Joining started...")
 	// add bootstrap node to routing table
 	kademlia.table.AddContact(NewContact(NewKademliaIDString(BOOTSTRAP_ID), BOOTSTRAP_IP))
 

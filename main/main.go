@@ -22,9 +22,15 @@ func main() {
 	// temp code to send pings to bootstrap
 	for {
 		c := kademlia.NewContact(kademlia.NewKademliaIDString(kademlia.BOOTSTRAP_ID), kademlia.BOOTSTRAP_IP)
-		msg := "test"
-		network.SendStoreReqMessage(&c, kademlia.GetHash([]byte(msg)), []byte(msg))
-		time.Sleep(time.Second * 30)
+		// msg := "test"
+		// network.SendStoreReqMessage(&c, kademlia.GetHash([]byte(msg)), []byte(msg))
+		rpc := network.SendPingMessage(&c)
+		if rpc.Type == kademlia.PONG {
+			fmt.Println("PONGED by", rpc.Sender)
+		} else {
+			fmt.Println("Connection timedout...")
+		}
+		time.Sleep(time.Second * 60)
 	}
 
 }
