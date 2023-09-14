@@ -19,6 +19,25 @@ func NewContact(id *KademliaID, address string) Contact {
 	return Contact{id, address, nil}
 }
 
+func CreateMyContact() Contact {
+	var myId *KademliaID
+
+	if IsBootstrap() {
+		fmt.Println("IS boostrap")
+		myId = NewKademliaIDString(BOOTSTRAP_ID)
+	} else {
+		fmt.Println("NOT boostrap")
+		myId = NewRandomKademliaID()
+	}
+
+	myIp, err := GetMyIp()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return NewContact(myId, myIp)
+}
+
 // CalcDistance calculates the distance to the target and
 // fills the contacts distance field
 func (contact *Contact) CalcDistance(target *KademliaID) {
@@ -71,23 +90,4 @@ func (candidates *ContactCandidates) Swap(i, j int) {
 // the Contact at index j
 func (candidates *ContactCandidates) Less(i, j int) bool {
 	return candidates.contacts[i].Less(&candidates.contacts[j])
-}
-
-func CreateMyContact() Contact {
-	var myId *KademliaID
-
-	if IsBootstrap() {
-		fmt.Println("IS boostrap")
-		myId = NewKademliaIDString(BOOTSTRAP_ID)
-	} else {
-		fmt.Println("NOT boostrap")
-		myId = NewRandomKademliaID()
-	}
-
-	myIp, err := GetMyIp()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return NewContact(myId, myIp)
 }

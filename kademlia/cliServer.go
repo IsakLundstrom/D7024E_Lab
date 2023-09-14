@@ -22,7 +22,6 @@ func CLIServer(kademlia *Kademlia) {
 			continue
 		}
 		CliHandler(connection, kademlia)
-
 	}
 }
 
@@ -36,7 +35,7 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	switch args[0] {
 	case "ping":
 		c := NewContact(NewKademliaIDString(BOOTSTRAP_ID), BOOTSTRAP_IP)
-		rpc := kademlia.network.SendPingMessage(&c)
+		rpc := kademlia.network.SendPingMessage(kademlia, &c)
 		if rpc.Type == PONG {
 			connection.Write([]byte("PONG"))
 		} else {

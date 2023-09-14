@@ -43,14 +43,14 @@ func (network *Network) Listen(kademlia *Kademlia) {
 	}
 }
 
-func (network *Network) SendPingMessage(contact *Contact) RPC {
+func (network *Network) SendPingMessage(kademlia *Kademlia, contact *Contact) RPC {
 	fmt.Println("Pinging", contact)
-	return network.sendReq(contact.Address, RPC{PING, *network.myContact, *contact.ID, nil, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{PING, *network.myContact, *contact.ID, nil, nil})
 }
 
-func (network *Network) SendStoreReqMessage(contact *Contact, hash KademliaID, data []byte) RPC {
+func (network *Network) SendStoreReqMessage(kademlia *Kademlia, contact *Contact, hash KademliaID, data []byte) RPC {
 	fmt.Println("Storing", data, "with hash", hash, "at", contact)
-	return network.sendReq(contact.Address, RPC{STORE_REQ, *network.myContact, hash, data, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{STORE_REQ, *network.myContact, hash, data, nil})
 }
 
 // func (network *Network) SendStoreRspMessage(contact *Contact) {
@@ -58,14 +58,19 @@ func (network *Network) SendStoreReqMessage(contact *Contact, hash KademliaID, d
 // 	network.sendRsp(contact.Address, RPC{STORE_RSP, *network.myContact, *contact.ID, KademliaID{}, nil, nil})
 // }
 
-func (network *Network) SendFindContactReqMessage(contact *Contact, target *KademliaID) RPC {
+func (network *Network) SendFindContactReqMessage(kademlia *Kademlia, contact Contact, target *KademliaID) RPC {
 	fmt.Println("Finding node", target, " at", contact)
-	return network.sendReq(contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
+	// rpcResponse := network.sendReq(contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
+	// if rpcResponse.Type == FIND_NODE_RSP {
+	// 	findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
+	// 	rpcChannel <- rpcResponse
+	// }
 }
 
-func (network *Network) SendFindDataReqMessage(contact *Contact, hash string) RPC {
+func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Contact, hash string) RPC {
 	fmt.Println("Finding data at", contact)
-	return network.sendReq(contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaIDString(hash), nil, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaIDString(hash), nil, nil})
 }
 
 // func (network *Network) SendFindDataResMessage(contact *Contact, hash string) { //TODO function not done
@@ -82,7 +87,7 @@ func (network *Network) sendRsp(address string, sendRpc RPC, connection net.Conn
 	}
 }
 
-func (network *Network) sendReq(address string, sendRpc RPC) RPC {
+func (network *Network) sendReq(kademlia *Kademlia, address string, sendRpc RPC) RPC {
 	connection, err := net.Dial(PROTOCOL, fmt.Sprintf("%s:%s", address, PORT))
 	if err != nil {
 		log.Println(err)
@@ -110,14 +115,15 @@ func (network *Network) sendReq(address string, sendRpc RPC) RPC {
 		log.Println(err)
 		return UndefinedRPC()
 	}
+
+	responseRpc.Sender.CalcDistance(network.myContact.ID)
+	kademlia.table.AddContact(responseRpc.Sender)
+
 	return responseRpc
 }
 
 func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Conn) {
 	defer connection.Close()
-	// Calculate distance from my ID to senders ID and update table
-	rpc.Sender.CalcDistance(kademlia.network.myContact.ID)
-	kademlia.table.AddContact(rpc.Sender)
 
 	// Handle request types of RCPs
 	switch rpc.Type {
@@ -147,6 +153,10 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 		log.Println("ERROR: undefined RPC type or not a request type")
 
 	}
+	
+	// Calculate distance from my ID to senders ID and update table
+	rpc.Sender.CalcDistance(kademlia.network.myContact.ID)
+	kademlia.table.AddContact(rpc.Sender)
 }
 
 func contactInArray(contact Contact, list []Contact) bool {

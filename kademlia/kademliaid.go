@@ -66,6 +66,16 @@ func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID {
 	return &result
 }
 
+// CalcDistance returns a new instance of a KademliaID that is built
+// through a bitwise XOR operation betweeen kademliaID and target
+func (kademliaID KademliaID) InverseBitwise() *KademliaID {
+	result := KademliaID{}
+	for i := 0; i < IDLength; i++ {
+		result[i] = ^kademliaID[i]
+	}
+	return &result
+}
+
 // String returns a simple string representation of a KademliaID
 func (kademliaID *KademliaID) String() string {
 	return hex.EncodeToString(kademliaID[0:IDLength])

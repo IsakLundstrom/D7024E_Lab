@@ -3,6 +3,7 @@ package kademlia
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 var k int = 20
@@ -32,21 +33,125 @@ func (kademlia *Kademlia) JoinNetwork() {
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
-	lookupMutex.Lock()
-	defer lookupMutex.Unlock()
+	// lookupMutex.Lock()
+	// defer lookupMutex.Unlock()
+	rpcChannel := make(chan RPC) //TODO maybe add channel limit
 
-	shortList := ShortList{[]ShortListItem{}}
-	// closestNode := Contact{} utkommenterat
+	// shortList := ShortList{[]ShortListItem{}}
+	findNodeList := NewFindNodeList()
 
-	// Get k closet nodes in my routing table
+	// kClosestNodes := []Contact{} 
+	// closestNode := kademlia.table.me
+	closestNode := NewContact(kademlia.table.me.ID.InverseBitwise(), "")
+	closestNode.CalcDistance(kademlia.network.myContact.ID)
+	fmt.Println("closestnode distance:", closestNode.distance)
+
+	// Get alpha closet nodes in my routing table
 	alphaClosestNodes := kademlia.table.FindClosestContacts(target.ID, alpha)
 
 	// Send FIND_NODE to #alpha nodes
+	fmt.Println("Send FIND_NODE to #alpha nodes")
 	for _, node := range alphaClosestNodes {
-		// *kademlia.network.queried = append(*kademlia.network.queried, node)
-		shortList.list = append(shortList.list, ShortListItem{node, true, false})
-		go kademlia.network.SendFindContactReqMessage(&node, target.ID)
+		// shortList.list = append(shortList.list, ShortListItem{node, true, false})
+		findNodeList.mutex.Lock()
+		findNodeList.queried = append(findNodeList.queried, node)
+		findNodeList.mutex.Unlock()
+		go func(node Contact) {
+			rpcResponse := kademlia.network.SendFindContactReqMessage(kademlia, node, target.ID)
+			if rpcResponse.Type == FIND_NODE_RSP {
+				rpcChannel <- rpcResponse
+			}
+		}(node)
 	}
+
+	
+	fmt.Println("Start iterative process...")
+	for {
+		roundTimeout := 3 * time.Second
+		roundEndTime := time.Now().Add(roundTimeout)
+		// roundClosestNode := closestNode 
+		foundCloserNode := false
+
+		round: for {
+			fmt.Println("Round started")
+
+			select {
+			case <- time.After(time.Until(roundEndTime)):
+				break round // i dont know yet
+			case rpcResponse := <- rpcChannel:
+				findNodeList.mutex.Lock()
+				findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
+				// Check if >= k have responded already
+				if len(findNodeList.responded) >= 20 {
+					break round
+				}
+				findNodeList.updateCandidates(target, &rpcResponse.Nodes)
+				// Update closestNode
+				if rpcResponse.Sender.Less(&closestNode) {
+					closestNode = rpcResponse.Sender
+					foundCloserNode = true
+				}
+				findNodeList.mutex.Unlock()
+			}
+			
+		}
+
+		if foundCloserNode {
+			fmt.Println("New Round.", "closestnode:", closestNode.ID, " distance:", closestNode.distance)
+
+			// New round
+			findNodeList.mutex.Lock()
+			min := findNodeList.candidates.Len()
+			if alpha < min {
+				min = alpha 
+			} 
+			nodes := findNodeList.candidates.GetContacts(min)
+			for _, node := range nodes {
+				findNodeList.queried = append(findNodeList.queried, node)
+				go func(node Contact) {
+					rpcResponse := kademlia.network.SendFindContactReqMessage(kademlia, node, target.ID)
+					if rpcResponse.Type == FIND_NODE_RSP {
+						rpcChannel <- rpcResponse
+					}
+				}(node)
+			}
+
+			findNodeList.candidates.contacts = findNodeList.candidates.contacts[min:] // remove called nodes
+			findNodeList.mutex.Unlock()
+			continue
+		} else {
+			fmt.Println("No closer node found in round")
+
+			// No closer node found -> send find node to rest k nodes which have not already been queried
+			findNodeList.mutex.Lock()
+			rest := k - len(findNodeList.queried)
+			min := findNodeList.candidates.Len()
+			if rest < min {
+				min = rest 
+			} 
+			nodes := findNodeList.candidates.GetContacts(min)
+			for _, node := range nodes {
+				findNodeList.queried = append(findNodeList.queried, node) // this call shouldnt matter
+				go func(node Contact) {
+					rpcResponse := kademlia.network.SendFindContactReqMessage(kademlia, node, target.ID)
+					if rpcResponse.Type == FIND_NODE_RSP {
+						rpcChannel <- rpcResponse
+					}
+				}(node)
+			}
+			findNodeList.mutex.Unlock()
+			break
+		}
+	}
+	fmt.Println("Lookup done?")
+
+	return findNodeList.responded
+		
+		//todo send next round
+
+	//  <- rpcChannel
+
+
 
 	// contact, kContacts := <- LookupChannel
 
@@ -79,7 +184,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	// }
 
 	//TODO we expect a answer, maybe handle it?
-	return nil
+	// return nil
 }
 
 func (kademlia *Kademlia) LookupData(hash string) []byte {

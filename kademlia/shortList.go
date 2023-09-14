@@ -14,3 +14,7 @@ type ShortList struct {
 func (shortList *ShortList) Fill(contact *[]Contact) {
 
 }
+
+func (shortList *ShortList) Responded(contact *Contact) {
+	
+}
