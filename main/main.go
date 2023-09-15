@@ -10,6 +10,7 @@ func main() {
 	fmt.Println("main starting...")
 
 	contact := kademlia.CreateMyContact()
+	fmt.Println("My contact:", contact.String())
 	network := kademlia.CreateNetwork(&contact)
 	kad := kademlia.CreateKademlia(&contact, &network)
 	// kad := Kademlia{NewRoutingTable(contact), &network, map[KademliaID][]byte{}}

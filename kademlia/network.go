@@ -59,7 +59,7 @@ func (network *Network) SendStoreReqMessage(kademlia *Kademlia, contact *Contact
 // }
 
 func (network *Network) SendFindContactReqMessage(kademlia *Kademlia, contact Contact, target *KademliaID) RPC {
-	fmt.Println("Finding node", target, " at", contact)
+	fmt.Println("Requesting Find_node", target, "at", contact.String())
 	return network.sendReq(kademlia, contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
 	// rpcResponse := network.sendReq(contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
 	// if rpcResponse.Type == FIND_NODE_RSP {
@@ -116,6 +116,7 @@ func (network *Network) sendReq(kademlia *Kademlia, address string, sendRpc RPC)
 		return UndefinedRPC()
 	}
 
+	// After getting response -> add responder to routing table
 	responseRpc.Sender.CalcDistance(network.myContact.ID)
 	kademlia.table.AddContact(responseRpc.Sender)
 
@@ -128,23 +129,23 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 	// Handle request types of RCPs
 	switch rpc.Type {
 	case PING:
-		fmt.Println("Pinged by", rpc.Sender, "now sending back pong")
+		fmt.Println("Pinged by", rpc.Sender.String(), "now sending back pong")
 		network.sendRsp(rpc.Sender.Address, RPC{PONG, *network.myContact, *rpc.Sender.ID, nil, nil}, connection)
 
 	case STORE_REQ:
-		fmt.Println("Store request", rpc.Sender)
+		fmt.Println("Store request from", rpc.Sender.String())
 
 		kademlia.store[rpc.TargetID] = rpc.Data
 		fmt.Println(kademlia.store) //TODO remove
 		// network.SendStoreRspMessage(&rpc.Sender)
 
 	case FIND_NODE_REQ:
-		fmt.Println("Find node", rpc.TargetID, "request from", rpc.Sender, "now responding with the k-closest nodes")
+		fmt.Println("Find node", rpc.TargetID.String(), "request from", rpc.Sender.String(), "now responding with the k-closest nodes")
 		kClosestNodes := kademlia.table.FindClosestContacts(&rpc.TargetID, k)
 		network.sendRsp(rpc.Sender.Address, RPC{FIND_NODE_RSP, *network.myContact, *&rpc.TargetID, nil, kClosestNodes}, connection)
 
 	case FIND_VALUE_REQ:
-		fmt.Println("Find value request", rpc.Sender)
+		fmt.Println("Find value request from", rpc.Sender.String())
 
 	case UNDEFINED:
 		log.Println("ERROR: undefined RPC type")
