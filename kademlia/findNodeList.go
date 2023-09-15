@@ -20,24 +20,29 @@ func NewFindNodeList() FindNodeList {
 	}
 }
 
-func (findNodeList *FindNodeList) updateCandidates(target *Contact, contacts *[]Contact) {
+func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact, contacts *[]Contact) {
+	fmt.Println("Response contacts:")
+	for _, c := range *contacts {
+		fmt.Println("  ", c.String())
+	}
+
 	fmt.Println("Already queried list:")
 	for _, c := range findNodeList.queried {
 		fmt.Println("  ", c.String())
 	}
 
-	fmt.Println("Recived contacts which is not queried:")
+	fmt.Println("Recived contacts which is not queried, not in candidates and not me:")
 	// Find all not queried contacts from contacts
-	notQueriedContacts := []Contact{}
+	notQueriedAndNotCandidates := []Contact{}
 	for _, c := range *contacts {
-		if !findNodeList.alreadyQueried(c) {
+		if !alreadyIn(c, findNodeList.queried) && !alreadyIn(c, findNodeList.candidates.contacts) && !c.ID.Equals(me.ID) {
 			c.CalcDistance(target.ID)
-			notQueriedContacts = append(notQueriedContacts, c)
+			notQueriedAndNotCandidates = append(notQueriedAndNotCandidates, c)
 			fmt.Println("  ", c.String())
 		}
 	}
 	// Append and sort the contacts to the list of candidates
-	findNodeList.candidates.Append(notQueriedContacts)
+	findNodeList.candidates.Append(notQueriedAndNotCandidates)
 	findNodeList.candidates.Sort()
 
 	fmt.Println("New candidates list:")
@@ -46,8 +51,8 @@ func (findNodeList *FindNodeList) updateCandidates(target *Contact, contacts *[]
 	}
 }
 
-func (findNodeList *FindNodeList) alreadyQueried(contact Contact) bool {
-	for _, c := range findNodeList.queried{
+func alreadyIn(contact Contact, contactList []Contact) bool {
+	for _, c := range contactList{
 		if c.ID.Equals(contact.ID) {
 			return true
 		}

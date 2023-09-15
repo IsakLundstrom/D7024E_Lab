@@ -91,7 +91,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 					break round
 				}
 				fmt.Println("Find node response from", rpcResponse.Sender.String())
-				findNodeList.updateCandidates(target, &rpcResponse.Nodes)
+				findNodeList.updateCandidates(&kademlia.table.me, target, &rpcResponse.Nodes)
 				// Update closestNode
 				if rpcResponse.Sender.Less(&closestNode) {
 					closestNode = rpcResponse.Sender
