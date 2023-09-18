@@ -18,8 +18,8 @@ type Kademlia struct {
 	store   map[KademliaID][]byte
 }
 
-func CreateKademlia(myContact *Contact, network *Network) Kademlia {
-	return Kademlia{NewRoutingTable(*myContact), network, map[KademliaID][]byte{}}
+func CreateKademlia(network *Network) Kademlia {
+	return Kademlia{NewRoutingTable(*network.myContact), network, map[KademliaID][]byte{}}
 
 }
 
@@ -42,7 +42,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	// shortList := ShortList{[]ShortListItem{}}
 	findNodeList := NewFindNodeList()
 
-	// kClosestNodes := []Contact{} 
+	// kClosestNodes := []Contact{}
 	// closestNode := kademlia.table.me
 	closestNode := NewContact(kademlia.table.me.ID.InverseBitwise(), "")
 	closestNode.CalcDistance(kademlia.network.myContact.ID)
@@ -72,17 +72,18 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 		roundNr++
 		roundTimeout := 3 * time.Second
 		roundEndTime := time.Now().Add(roundTimeout)
-		// roundClosestNode := closestNode 
+		// roundClosestNode := closestNode
 		foundCloserNode := false
 
 		fmt.Println("Round started:", roundNr)
-		round: for {
+	round:
+		for {
 
 			select {
-			case <- time.After(time.Until(roundEndTime)):
+			case <-time.After(time.Until(roundEndTime)):
 				fmt.Println("Round over")
 				break round // i dont know yet
-			case rpcResponse := <- rpcChannel:
+			case rpcResponse := <-rpcChannel:
 				findNodeList.mutex.Lock()
 				findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
 				// Check if >= k have responded already
@@ -99,7 +100,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 				}
 				findNodeList.mutex.Unlock()
 			}
-			
+
 		}
 
 		if foundCloserNode {
@@ -109,8 +110,8 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 			findNodeList.mutex.Lock()
 			min := findNodeList.candidates.Len()
 			if alpha < min {
-				min = alpha 
-			} 
+				min = alpha
+			}
 			nodes := findNodeList.candidates.GetContacts(min)
 			for _, node := range nodes {
 				findNodeList.queried = append(findNodeList.queried, node)
@@ -133,8 +134,8 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 			rest := k - len(findNodeList.queried)
 			min := findNodeList.candidates.Len()
 			if rest < min {
-				min = rest 
-			} 
+				min = rest
+			}
 			nodes := findNodeList.candidates.GetContacts(min)
 			for _, node := range nodes {
 				findNodeList.queried = append(findNodeList.queried, node) // this call shouldnt matter
@@ -153,12 +154,10 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	fmt.Println(kademlia.table.String())
 
 	return findNodeList.responded
-		
-		//todo send next round
+
+	//todo send next round
 
 	//  <- rpcChannel
-
-
 
 	// contact, kContacts := <- LookupChannel
 
