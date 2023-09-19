@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
@@ -27,7 +28,7 @@ func CLIServer(kademlia *Kademlia) {
 
 func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	defer connection.Close()
-	
+
 	b := make([]byte, 128)
 	connection.Read(b)
 	args := strings.SplitN(string(b), " ", 2)
@@ -43,9 +44,14 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 		}
 	case "put":
 		fmt.Println("PUTTING")
-		res := kademlia.Store([]byte(args[1]))
+		res, status := kademlia.Store([]byte(args[1]))
+		if status == "FAIL" {
+			connection.Write([]byte(status))
+			return
+		}
+
 		//TODO check if res is bytes
-		connection.Write(res)
+		connection.Write([]byte(hex.EncodeToString(res)))
 	case "get":
 		fmt.Println("GETTING")
 		res := kademlia.LookupData(args[1])

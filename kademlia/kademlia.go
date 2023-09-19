@@ -26,7 +26,7 @@ func (kademlia *Kademlia) JoinNetwork() {
 	kademlia.table.AddContact(NewContact(NewKademliaIDString(BOOTSTRAP_ID), BOOTSTRAP_IP))
 
 	// lookup on itself
-	res := kademlia.LookupContact(&kademlia.table.me)
+	res := kademlia.LookupContact(kademlia.table.me.ID)
 
 	fmt.Println("Join lookup result:")
 	for _, c := range res {
@@ -34,7 +34,7 @@ func (kademlia *Kademlia) JoinNetwork() {
 	}
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
+func (kademlia *Kademlia) LookupContact(targetID *KademliaID) []Contact {
 	// Response channel and response storage
 	rpcChannel := make(chan RPC) //TODO maybe add channel limit
 	findNodeList := NewFindNodeList()
@@ -44,7 +44,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	closestNode.CalcDistance(kademlia.network.myContact.ID)
 
 	// Get alpha closet nodes in my routing table and set these as first candidates
-	alphaClosestNodes := kademlia.table.FindClosestContacts(target.ID, alpha)
+	alphaClosestNodes := kademlia.table.FindClosestContacts(targetID, alpha)
 	findNodeList.candidates.contacts = alphaClosestNodes
 
 	// Round variables
@@ -63,7 +63,7 @@ mainLoop:
 		roundEndTime := time.Now().Add(roundTimeout)
 
 		// Send requests
-		kademlia.newRequestRound(&findNodeList, target, &rpcChannel, foundCloserNode)
+		kademlia.newRequestRound(&findNodeList, targetID, &rpcChannel, foundCloserNode)
 		if !foundCloserNode {
 			fmt.Println("No closer node found in previous round, now just wait for last responses.")
 			finalRound = true
@@ -87,7 +87,7 @@ mainLoop:
 				findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
 
 				fmt.Println("Find node response from", rpcResponse.Sender.String())
-				findNodeList.updateCandidates(&kademlia.table.me, target, &rpcResponse.Nodes)
+				findNodeList.updateCandidates(&kademlia.table.me, targetID, &rpcResponse.Nodes)
 				// Update closestNode
 				if rpcResponse.Sender.Less(&closestNode) {
 					closestNode = rpcResponse.Sender
@@ -124,7 +124,7 @@ mainLoop:
 	return kClosest.GetContacts(numNodes)
 }
 
-func (kademlia *Kademlia) newRequestRound(findNodeList *FindNodeList, target *Contact, rpcChannel *chan RPC, foundCloserNode bool) {
+func (kademlia *Kademlia) newRequestRound(findNodeList *FindNodeList, targetID *KademliaID, rpcChannel *chan RPC, foundCloserNode bool) {
 	findNodeList.mutex.Lock()
 	// Selects another alpha nodes until a round doesn't find a closer node -> requests to each of the k closest nodes that it has not already queried.
 	numRequests := alpha
@@ -141,7 +141,7 @@ func (kademlia *Kademlia) newRequestRound(findNodeList *FindNodeList, target *Co
 	for _, node := range nodes {
 		findNodeList.queried = append(findNodeList.queried, node)
 		go func(node Contact) {
-			rpcResponse := kademlia.network.SendFindContactReqMessage(kademlia, node, target.ID)
+			rpcResponse := kademlia.network.SendFindContactReqMessage(kademlia, node, targetID)
 			if rpcResponse.Type == FIND_NODE_RSP {
 				*rpcChannel <- rpcResponse
 			} else {
@@ -158,7 +158,54 @@ func (kademlia *Kademlia) LookupData(hash string) []byte {
 	return []byte("TODO")
 }
 
-func (kademlia *Kademlia) Store(data []byte) []byte {
-	// TODO
-	return []byte("TODO")
+func (kademlia *Kademlia) Store(data []byte) ([]byte, string) {
+	rpcChannel := make(chan RPC)
+
+	hash := GetHash(data)
+	contacts := kademlia.LookupContact(&hash)
+
+	okCounter := 0
+	hasCounter := 0
+	failCounter := 0
+
+	for _, c := range contacts {
+
+		go func(c Contact) {
+			rpcResponse := kademlia.network.SendStoreReqMessage(kademlia, &c, hash, data)
+			if rpcResponse.Type == STORE_RSP {
+				rpcChannel <- rpcResponse
+			} else {
+				log.Println("Recived response type:", rpcResponse.Type, "but expected:", STORE_RSP)
+			}
+		}(c)
+	}
+
+	timeOut := 300 * time.Millisecond
+	endTime := time.Now().Add(timeOut)
+
+listen:
+	for {
+		select {
+		case <-time.After(time.Until(endTime)):
+			fmt.Println("Final round over")
+			break listen
+		case rpcResponse := <-rpcChannel:
+			switch string(rpcResponse.Data) {
+			case "ok":
+				okCounter++
+			case "has":
+				hasCounter++
+			default:
+				failCounter++
+			}
+		}
+	}
+
+	fmt.Println("sentTo", len(contacts), "okCounter:", okCounter, "hasCounter:", hasCounter, "failCounter:", failCounter)
+
+	if len(contacts) == okCounter+hasCounter {
+		return hash[:], "OK"
+	}
+	return hash[:], "FAIL"
+
 }

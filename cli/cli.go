@@ -25,7 +25,7 @@ func main() {
 	case "ping":
 
 		fmt.Println("pinging bootstrap...")
-		CliSend("ping " )
+		CliSend("ping ")
 
 	case "put":
 		if len(args) != 3 {

@@ -20,7 +20,7 @@ func NewFindNodeList() FindNodeList {
 	}
 }
 
-func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact, contacts *[]Contact) {
+func (findNodeList *FindNodeList) updateCandidates(me *Contact, targetID *KademliaID, contacts *[]Contact) {
 	fmt.Println("updateCandidates:")
 	fmt.Println("  Response contacts:")
 	for _, c := range *contacts {
@@ -42,7 +42,7 @@ func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact,
 	notQueriedAndNotCandidates := []Contact{}
 	for _, c := range *contacts {
 		if !alreadyIn(c, findNodeList.queried) && !alreadyIn(c, findNodeList.candidates.contacts) && !c.ID.Equals(me.ID) {
-			c.CalcDistance(target.ID)
+			c.CalcDistance(targetID)
 			notQueriedAndNotCandidates = append(notQueriedAndNotCandidates, c)
 			fmt.Println("    ", c.String())
 		}

@@ -17,7 +17,7 @@ func CreateNetwork(myContact *Contact) Network {
 }
 
 func (network *Network) Listen(kademlia *Kademlia) {
-	port, err := net.Listen(PROTOCOL, ":" + PORT)
+	port, err := net.Listen(PROTOCOL, ":"+PORT)
 	if err != nil {
 		log.Println(err)
 		return
@@ -53,19 +53,9 @@ func (network *Network) SendStoreReqMessage(kademlia *Kademlia, contact *Contact
 	return network.sendReq(kademlia, contact.Address, RPC{STORE_REQ, *network.myContact, hash, data, nil})
 }
 
-// func (network *Network) SendStoreRspMessage(contact *Contact) {
-// 	fmt.Println("Stored response from", contact)
-// 	network.sendRsp(contact.Address, RPC{STORE_RSP, *network.myContact, *contact.ID, KademliaID{}, nil, nil})
-// }
-
 func (network *Network) SendFindContactReqMessage(kademlia *Kademlia, contact Contact, target *KademliaID) RPC {
 	fmt.Println("Requesting Find_node", target, "at", contact.String())
 	return network.sendReq(kademlia, contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
-	// rpcResponse := network.sendReq(contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
-	// if rpcResponse.Type == FIND_NODE_RSP {
-	// 	findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
-	// 	rpcChannel <- rpcResponse
-	// }
 }
 
 func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Contact, hash string) RPC {
@@ -74,7 +64,7 @@ func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Cont
 }
 
 // func (network *Network) SendFindDataResMessage(contact *Contact, hash string) { //TODO function not done
-// 	fmt.Println("Returning data to", contact) 
+// 	fmt.Println("Returning data to", contact)
 // 	network.sendRsp(contact.Address, RPC{FIND_VALUE_RSP, *network.myContact, *contact.ID, *NewKademliaIDString(hash), nil, nil})
 // }
 
@@ -96,7 +86,7 @@ func (network *Network) sendReq(kademlia *Kademlia, address string, sendRpc RPC)
 	defer connection.Close()
 
 	encoder := gob.NewEncoder(connection)
-	
+
 	// Encode and send the struct
 	err = encoder.Encode(sendRpc)
 	if err != nil {
@@ -105,7 +95,7 @@ func (network *Network) sendReq(kademlia *Kademlia, address string, sendRpc RPC)
 	}
 	// Set timeout for reply
 	timeout := time.Second * 3 //TODO change to a constant
-	connection.SetReadDeadline(time.Now().Add(timeout)) 
+	connection.SetReadDeadline(time.Now().Add(timeout))
 
 	decoder := gob.NewDecoder(connection)
 	var responseRpc RPC
@@ -134,15 +124,23 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 
 	case STORE_REQ:
 		fmt.Println("Store request from", rpc.Sender.String())
+		var storeStatus string
 
-		kademlia.store[rpc.TargetID] = rpc.Data
-		fmt.Println(kademlia.store) //TODO remove
-		// network.SendStoreRspMessage(&rpc.Sender)
+		_, exist := kademlia.store[rpc.TargetID]
+		if exist {
+			storeStatus = "has"
+		} else {
+			kademlia.store[rpc.TargetID] = rpc.Data
+			storeStatus = "ok"
+		}
+
+		fmt.Println("Status:", storeStatus, kademlia.store)
+		network.sendRsp(rpc.Sender.Address, RPC{STORE_RSP, *network.myContact, *rpc.Sender.ID, []byte(storeStatus), nil}, connection)
 
 	case FIND_NODE_REQ:
 		fmt.Println("Find node", rpc.TargetID.String(), "request from", rpc.Sender.String(), "now responding with the k-closest nodes")
 		kClosestNodes := kademlia.table.FindClosestContacts(&rpc.TargetID, k)
-		network.sendRsp(rpc.Sender.Address, RPC{FIND_NODE_RSP, *network.myContact, *&rpc.TargetID, nil, kClosestNodes}, connection)
+		network.sendRsp(rpc.Sender.Address, RPC{FIND_NODE_RSP, *network.myContact, rpc.TargetID, nil, kClosestNodes}, connection)
 
 	case FIND_VALUE_REQ:
 		fmt.Println("Find value request from", rpc.Sender.String())
@@ -154,7 +152,7 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 		log.Println("ERROR: undefined RPC type or not a request type")
 
 	}
-	
+
 	// Calculate distance from my ID to senders ID and update table
 	rpc.Sender.CalcDistance(kademlia.network.myContact.ID)
 	kademlia.table.AddContact(rpc.Sender)
