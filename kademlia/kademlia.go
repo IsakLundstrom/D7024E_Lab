@@ -3,13 +3,12 @@ package kademlia
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 )
 
 var k int = 20
 var alpha int = 3
-var lookupMutex sync.Mutex
+// var lookupMutex sync.Mutex
 
 // var LookupChannel = make(chan struct {concact Contact, list []Contact}, alpha) utkommenterat
 
@@ -54,7 +53,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	// Round variables
 	roundNr := 1 // only used for prints
 	roundTimeout := 300 * time.Millisecond
-	// var roundResponseContacts []Contact
 	foundCloserNode := true
 	finalRound := false
 
@@ -64,7 +62,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 		fmt.Println("New round started:", roundNr)
 		fmt.Println("closestnode:", closestNode.ID.String(), " distance:", closestNode.distance)
 		
-		// roundResponseContacts = []Contact{}
 		roundEndTime := time.Now().Add(roundTimeout)
 
 		// Send requests
@@ -87,7 +84,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 				break round
 			case rpcResponse := <-rpcChannel:
 				findNodeList.mutex.Lock()
-				// roundResponseContacts = append(roundResponseContacts, rpcResponse.Sender)
 				findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
 
 				fmt.Println("Find node response from", rpcResponse.Sender.String())
@@ -103,7 +99,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 		fmt.Println("Round over")
 	
 		findNodeList.mutex.Lock()
-		// done := findNodeList.updateKClosest(&roundResponseContacts)
 		done := findNodeList.checkKClosest()
 		findNodeList.mutex.Unlock()
 		if done {
@@ -112,9 +107,11 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 		roundNr++
 	}
 
-	// Final check to add responses which where discarded before if len(kClosest) < k
+	fmt.Println("Lookup done")
+	fmt.Println(kademlia.table.String())
+
+	// Final part to extract the closest nodes which repsonded
 	findNodeList.mutex.Lock()
-	// findNodeList.finalUpdateKClosest()
 	kClosest := ContactCandidates{findNodeList.responded}
 	kClosest.Sort()
 	numNodes := kClosest.Len()
@@ -123,10 +120,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 	defer findNodeList.mutex.Unlock()
 
-	fmt.Println("Lookup done")
-	fmt.Println(kademlia.table.String())
-
-	// return findNodeList.kClosest.contacts
 	return kClosest.GetContacts(numNodes)
 }
 

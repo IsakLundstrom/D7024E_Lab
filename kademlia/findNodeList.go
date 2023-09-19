@@ -33,6 +33,11 @@ func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact,
 	for _, c := range findNodeList.queried {
 		fmt.Println("    ", c.String())
 	}
+	
+	fmt.Println("  Old candidates list:")
+	for _, c := range findNodeList.candidates.contacts {
+		fmt.Println("    ", c.String())
+	}
 
 	fmt.Println("  Recived contacts which is not queried, not in candidates and not me:")
 	// Find all not queried contacts from contacts
@@ -41,7 +46,7 @@ func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact,
 		if !alreadyIn(c, findNodeList.queried) && !alreadyIn(c, findNodeList.candidates.contacts) && !c.ID.Equals(me.ID) {
 			c.CalcDistance(target.ID)
 			notQueriedAndNotCandidates = append(notQueriedAndNotCandidates, c)
-			fmt.Println("  ", c.String())
+			fmt.Println("    ", c.String())
 		}
 	}
 	// Append and sort the contacts to the list of candidates
@@ -56,78 +61,25 @@ func (findNodeList *FindNodeList) updateCandidates(me *Contact, target *Contact,
 
 // Returns true if responses are the k closest nodes known, else false
 func (findNodeList *FindNodeList) checkKClosest() bool {
-	done := false
 
 	// Sort response contacts
 	respondedClosest := ContactCandidates{findNodeList.responded}
 	respondedClosest.Sort()
 
-	// if any candidates exist
 	candidateExists := findNodeList.candidates.Len() > 0 
-	
-	for i, c := range respondedClosest.contacts {
-		if i >= k {
-			done = true
-			break
-		}
-		if !candidateExists || c.Less(&findNodeList.candidates.contacts[0]) {
-			break
-		}
+
+	// if any candidate dosent exist and responded >= k, return true
+	if !candidateExists && respondedClosest.Len() >= k {
+		return true
 	}
 
-	return done
+	// if we have >= k responses and all k responses have a dist < all in candidates (aka the kth responded dist < first candidate) 
+	if respondedClosest.Len() >= k && respondedClosest.contacts[k - 1].Less(&findNodeList.candidates.contacts[0]) {
+		return true
+	}
+
+	return false
 }
-
-// // Returns true if kClosest have k nodes, else false
-// func (findNodeList *FindNodeList) updateKClosest(roundResponseContacts *[]Contact) bool {
-// 	fmt.Println("updateKClosest:")
-// 	fmt.Println("  Round contacts which responded:")
-// 	for _, c := range *roundResponseContacts {
-// 		fmt.Println("    ", c.String())
-// 	}
-
-// 	done := false
-
-// 	// Append and sort round response contacts
-// 	findNodeList.kClosest.contacts = append(findNodeList.kClosest.contacts, *roundResponseContacts...)
-// 	findNodeList.kClosest.Sort()
-
-// 	newKClosest := []Contact{}
-// 	candidateExists := findNodeList.candidates.Len() > 0 
-	
-// 	fmt.Println("  New kClosest list:")
-// 	for i, c := range findNodeList.kClosest.contacts {
-// 		if i >= k {
-// 			done = true
-// 			break
-// 		}
-// 		if !candidateExists || c.Less(&findNodeList.candidates.contacts[0]) {
-// 			newKClosest = append(newKClosest, c)
-// 			fmt.Println("    ", c.String())
-// 		}
-// 	}
-	
-// 	findNodeList.kClosest.contacts = newKClosest
-// 	findNodeList.kClosest.Sort()
-
-// 	return done
-// }
-
-// func (findNodeList *FindNodeList) finalUpdateKClosest() {
-// 	respondedClosest := ContactCandidates{findNodeList.responded}
-// 	respondedClosest.Sort()
-
-// 	for _, c := range respondedClosest.contacts {
-// 		if findNodeList.kClosest.Len() >= k {
-// 			break
-// 		}
-// 		if !alreadyIn(c, findNodeList.kClosest.contacts) {
-// 			findNodeList.kClosest.Append([]Contact{c});
-// 		}
-// 	}
-
-// 	findNodeList.kClosest.Sort()
-// }
 
 func alreadyIn(contact Contact, contactList []Contact) bool {
 	for _, c := range contactList{
