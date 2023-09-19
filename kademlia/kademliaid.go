@@ -14,13 +14,9 @@ type KademliaID [IDLength]byte
 // NewKademliaIDString returns a new instance of a KademliaID based on the string input
 func NewKademliaIDString(data string) *KademliaID {
 	decoded, _ := hex.DecodeString(data)
-	return NewKademliaIDByte(decoded)
-}
-
-func NewKademliaIDByte(data []byte) *KademliaID {
 	newKademliaID := KademliaID{}
 	for i := 0; i < IDLength; i++ {
-		newKademliaID[i] = data[i]
+		newKademliaID[i] = decoded[i]
 	}
 
 	return &newKademliaID

@@ -71,9 +71,9 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 }
 
 func (rt RoutingTable) String() string {
-	result := fmt.Sprintf("RoutingTable:\n")
+	result := "RoutingTable:\n"
 	result += fmt.Sprintf("  Me: %+v\n", rt.me)
-	result += fmt.Sprintf("  Buckets:\n")
+	result += "  Buckets:\n"
 
 	for i, b := range rt.buckets {
 		if b != nil && b.list.Len() > 0 {

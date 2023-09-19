@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
@@ -50,8 +49,7 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 			return
 		}
 
-		//TODO check if res is bytes
-		connection.Write([]byte(hex.EncodeToString(res)))
+		connection.Write([]byte(res))
 	case "get":
 		fmt.Println("GETTING")
 		res := kademlia.LookupData(args[1])

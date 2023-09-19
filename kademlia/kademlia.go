@@ -12,11 +12,11 @@ var alpha int = 3
 type Kademlia struct {
 	table   *RoutingTable
 	network *Network
-	store   map[KademliaID][]byte
+	store   map[string]string
 }
 
 func CreateKademlia(network *Network) Kademlia {
-	return Kademlia{NewRoutingTable(*network.myContact), network, map[KademliaID][]byte{}}
+	return Kademlia{NewRoutingTable(*network.myContact), network, map[string]string{}}
 
 }
 
@@ -158,11 +158,11 @@ func (kademlia *Kademlia) LookupData(hash string) []byte {
 	return []byte("TODO")
 }
 
-func (kademlia *Kademlia) Store(data []byte) ([]byte, string) {
+func (kademlia *Kademlia) Store(data []byte) (string, string) {
 	rpcChannel := make(chan RPC)
 
-	hash := GetHash(data)
-	contacts := kademlia.LookupContact(&hash)
+	hash := NewKademliaIDString(GetHash(data))
+	contacts := kademlia.LookupContact(hash)
 
 	okCounter := 0
 	hasCounter := 0
@@ -171,7 +171,7 @@ func (kademlia *Kademlia) Store(data []byte) ([]byte, string) {
 	for _, c := range contacts {
 
 		go func(c Contact) {
-			rpcResponse := kademlia.network.SendStoreReqMessage(kademlia, &c, hash, data)
+			rpcResponse := kademlia.network.SendStoreReqMessage(kademlia, &c, *hash, data)
 			if rpcResponse.Type == STORE_RSP {
 				rpcChannel <- rpcResponse
 			} else {
@@ -204,8 +204,8 @@ listen:
 	fmt.Println("sentTo", len(contacts), "okCounter:", okCounter, "hasCounter:", hasCounter, "failCounter:", failCounter)
 
 	if len(contacts) == okCounter+hasCounter {
-		return hash[:], "OK"
+		return hash.String(), "OK"
 	}
-	return hash[:], "FAIL"
+	return hash.String(), "FAIL"
 
 }

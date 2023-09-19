@@ -126,11 +126,11 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 		fmt.Println("Store request from", rpc.Sender.String())
 		var storeStatus string
 
-		_, exist := kademlia.store[rpc.TargetID]
+		_, exist := kademlia.store[rpc.TargetID.String()]
 		if exist {
 			storeStatus = "has"
 		} else {
-			kademlia.store[rpc.TargetID] = rpc.Data
+			kademlia.store[rpc.TargetID.String()] = string(rpc.Data)
 			storeStatus = "ok"
 		}
 
@@ -156,13 +156,4 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 	// Calculate distance from my ID to senders ID and update table
 	rpc.Sender.CalcDistance(kademlia.network.myContact.ID)
 	kademlia.table.AddContact(rpc.Sender)
-}
-
-func contactInArray(contact Contact, list []Contact) bool {
-	for _, c := range list {
-		if c == contact {
-			return true
-		}
-	}
-	return false
 }
