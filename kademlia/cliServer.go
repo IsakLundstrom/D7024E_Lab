@@ -9,16 +9,16 @@ import (
 )
 
 func CLIServer(kademlia *Kademlia) {
-
 	listener, err := net.Listen("unix", "/tmp/echo.sock")
 	if err != nil {
-		log.Println(err)
+		log.Println("Socket error:", err)
 		return
 	}
+
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
-			log.Println(err)
+			log.Println("Connection error: ", err)
 			continue
 		}
 		CliHandler(connection, kademlia)
@@ -28,10 +28,11 @@ func CLIServer(kademlia *Kademlia) {
 func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	defer connection.Close()
 
-	b := make([]byte, 128)
+	b := make([]byte, 512)
 	connection.Read(b)
 	args := strings.SplitN(string(b), " ", 2)
-
+	
+	fmt.Println("args[0]:", args[0])
 	switch args[0] {
 	case "ping":
 		c := NewContact(NewKademliaID(BOOTSTRAP_ID), BOOTSTRAP_IP)
@@ -48,13 +49,16 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 			connection.Write([]byte(status))
 			return
 		}
-
 		connection.Write([]byte(res))
 	case "get":
 		fmt.Println("GETTING")
-		res := kademlia.LookupData(args[1])
-		//TODO check what type res will be
-		connection.Write(res)
+		contacts, data := kademlia.LookupData(args[1])
+		fmt.Println("contact:", contacts, "data:", data, "data == ", data == "")
+		res := "Could not find the data"
+		if data != "" {
+			res = fmt.Sprintf("The node: %s\nThe data: %s", contacts[0].String(), data)
+		}
+		connection.Write([]byte(res))
 	case "exit":
 		fmt.Println("EXITING")
 		connection.Write([]byte("exiting"))
@@ -63,5 +67,4 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	default:
 		fmt.Println("Invalid input!")
 	}
-
 }

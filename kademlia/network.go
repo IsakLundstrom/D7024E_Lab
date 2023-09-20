@@ -53,15 +53,15 @@ func (network *Network) SendStoreReqMessage(kademlia *Kademlia, contact *Contact
 	return network.sendReq(kademlia, contact.Address, RPC{STORE_REQ, *network.myContact, hash, data, nil})
 }
 
-func (network *Network) SendFindContactReqMessage(kademlia *Kademlia, contact Contact, target *KademliaID) RPC {
+func (network *Network) SendFindReqMessage(kademlia *Kademlia, contact Contact, target *KademliaID, findType RPCType) RPC {
 	fmt.Println("Requesting Find_node", target, "at", contact.String())
-	return network.sendReq(kademlia, contact.Address, RPC{FIND_NODE_REQ, *network.myContact, *target, nil, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{findType, *network.myContact, *target, nil, nil})
 }
 
-func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Contact, hash string) RPC {
-	fmt.Println("Finding data at", contact)
-	return network.sendReq(kademlia, contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaID(hash), nil, nil})
-}
+// func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Contact, hash string) RPC {
+// 	fmt.Println("Finding data at", contact)
+// 	return network.sendReq(kademlia, contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaID(hash), nil, nil})
+// }
 
 // func (network *Network) SendFindDataResMessage(contact *Contact, hash string) { //TODO function not done
 // 	fmt.Println("Returning data to", contact)
@@ -144,6 +144,15 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 
 	case FIND_VALUE_REQ:
 		fmt.Println("Find value request from", rpc.Sender.String())
+		data, exist := kademlia.store[rpc.TargetID.String()]
+		if exist {
+			fmt.Println("I had the data! Sending it back! hash:", rpc.TargetID.String() ," data:", data)
+		 	network.sendRsp(rpc.Sender.Address, RPC{FIND_VALUE_RSP, *network.myContact, rpc.TargetID, []byte(data), nil}, connection)
+		} else {
+			fmt.Println("I hadn't the data :( sending kclosets back")
+			kClosestNodes := kademlia.table.FindClosestContacts(&rpc.TargetID, k)
+			network.sendRsp(rpc.Sender.Address, RPC{FIND_VALUE_RSP, *network.myContact, rpc.TargetID, nil, kClosestNodes}, connection)
+		}
 
 	case UNDEFINED:
 		log.Println("ERROR: undefined RPC type")
