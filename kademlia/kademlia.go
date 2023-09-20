@@ -23,7 +23,7 @@ func CreateKademlia(network *Network) Kademlia {
 func (kademlia *Kademlia) JoinNetwork() {
 	fmt.Println("Joining started...")
 	// add bootstrap node to routing table
-	kademlia.table.AddContact(NewContact(NewKademliaIDString(BOOTSTRAP_ID), BOOTSTRAP_IP))
+	kademlia.table.AddContact(NewContact(NewKademliaID(BOOTSTRAP_ID), BOOTSTRAP_IP))
 
 	// lookup on itself
 	res := kademlia.LookupContact(kademlia.table.me.ID)
@@ -161,7 +161,7 @@ func (kademlia *Kademlia) LookupData(hash string) []byte {
 func (kademlia *Kademlia) Store(data []byte) (string, string) {
 	rpcChannel := make(chan RPC)
 
-	hash := NewKademliaIDString(GetHash(data))
+	hash := NewKademliaID(GetHash(data))
 	contacts := kademlia.LookupContact(hash)
 
 	okCounter := 0

@@ -22,7 +22,7 @@ func main() {
 	kademlia.CLIServer(&kad)
 	// temp code to send pings to bootstrap
 	for {
-		c := kademlia.NewContact(kademlia.NewKademliaIDString(kademlia.BOOTSTRAP_ID), kademlia.BOOTSTRAP_IP)
+		c := kademlia.NewContact(kademlia.NewKademliaID(kademlia.BOOTSTRAP_ID), kademlia.BOOTSTRAP_IP)
 		// msg := "test"
 		// network.SendStoreReqMessage(&c, kademlia.GetHash([]byte(msg)), []byte(msg))
 		rpc := network.SendPingMessage(&kad, &c)

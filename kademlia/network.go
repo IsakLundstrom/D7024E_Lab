@@ -60,7 +60,7 @@ func (network *Network) SendFindContactReqMessage(kademlia *Kademlia, contact Co
 
 func (network *Network) SendFindDataReqMessage(kademlia *Kademlia, contact *Contact, hash string) RPC {
 	fmt.Println("Finding data at", contact)
-	return network.sendReq(kademlia, contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaIDString(hash), nil, nil})
+	return network.sendReq(kademlia, contact.Address, RPC{FIND_VALUE_REQ, *network.myContact, *NewKademliaID(hash), nil, nil})
 }
 
 // func (network *Network) SendFindDataResMessage(contact *Contact, hash string) { //TODO function not done
