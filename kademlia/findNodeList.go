@@ -58,7 +58,7 @@ func (findNodeList *FindNodeList) updateCandidates(me *Contact, targetID *Kademl
 }
 
 // Returns true if responses are the k closest nodes known, else false
-func (findNodeList *FindNodeList) checkKClosest() bool {
+func (findNodeList *FindNodeList) checkKClosest(k int) bool {
 
 	// Sort response contacts
 	respondedClosest := ContactCandidates{findNodeList.responded}

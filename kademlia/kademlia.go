@@ -98,21 +98,21 @@ func (kademlia *Kademlia) iterativeFind(targetID *KademliaID, findType RPCType) 
 	// Response channel and response storage
 	rpcChannel := make(chan RPC) //TODO maybe add channel limit
 	findNodeList := NewFindNodeList()
-	
+
 	// Init closest node as furthest away as possible
 	closestNode := NewContact(kademlia.table.me.ID.InverseBitwise(), "")
 	closestNode.CalcDistance(kademlia.network.myContact.ID)
-	
+
 	// Get alpha closet nodes in my routing table and set these as first candidates
 	alphaClosestNodes := kademlia.table.FindClosestContacts(targetID, alpha)
 	findNodeList.candidates.contacts = alphaClosestNodes
-	
+
 	// Round variables
 	roundNr := 1 // only used for prints
 	roundTimeout := 300 * time.Millisecond
 	foundCloserNode := true
 	finalRound := false
-	
+
 	fmt.Println("Start rounds / iterative process...")
 iterativeProcess:
 	for {
@@ -157,7 +157,7 @@ iterativeProcess:
 				case FIND_NODE_RSP:
 					findNodeList.mutex.Lock()
 					findNodeList.responded = append(findNodeList.responded, rpcResponse.Sender)
-	
+
 					fmt.Println("Find node response from", rpcResponse.Sender.String())
 					findNodeList.updateCandidates(&kademlia.table.me, targetID, &rpcResponse.Nodes)
 					// Update closestNode
@@ -174,7 +174,7 @@ iterativeProcess:
 		fmt.Println("Round over")
 
 		findNodeList.mutex.Lock()
-		done := findNodeList.checkKClosest()
+		done := findNodeList.checkKClosest(k)
 
 		if done {
 			break iterativeProcess
