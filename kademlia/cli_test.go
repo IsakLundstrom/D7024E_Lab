@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// TODO I don't understand how to test the cli it will not cooperate
 func TestCli(t *testing.T) {
 
 	mockServer, mockClient := net.Pipe()
@@ -17,33 +16,12 @@ func TestCli(t *testing.T) {
 	contact := NewContact(kademliaId, address)
 	network := CreateNetwork(&contact)
 	node := CreateKademlia(&network)
-	// socketAddress := "/tmp/echo.sock"
-
-	// listener, err := net.Listen("unix", socketAddress)
-	// if err != nil {
-	// 	t.Errorf("recieved err [%s] on %s", err, socketAddress)
-	// }
-	// defer listener.Close()
 
 	testWords := [2]string{"put test", "get 01234567890123456789"}
 
 	for _, command := range testWords {
 		args := strings.SplitN(command, " ", 2)
 		fmt.Println("loop?", command)
-		// connection, err := listener.Accept()
-		// if err != nil {
-		// 	t.Errorf("recieved err [%s] on listener.Accept()", err)
-		// }
-		// fmt.Println("connection accepted")
-
-		// conn, err := net.Dial("unix", socketAddress)
-		// if err != nil {
-		// 	t.Errorf("[%s]", err)
-		// 	return
-		// }
-		// conn.Write([]byte(command))
-		// response := make([]byte, 128)
-		// conn.Read(response)
 
 		go CliHandler(mockServer, &node)
 
