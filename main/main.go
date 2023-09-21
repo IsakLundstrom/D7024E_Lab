@@ -3,22 +3,29 @@ package main
 import (
 	"fmt"
 	"kadlab/kademlia"
+	"log"
 	"time"
 )
 
 func main() {
 	fmt.Println("main starting...")
 
-	contact := kademlia.CreateMyContact()
-	fmt.Println("My contact:", contact.String())
+	contact := kademlia.CreateMyContact(kademlia.IP_PREFIX)
 	network := kademlia.CreateNetwork(&contact)
 	kad := kademlia.CreateKademlia(&network)
-	// kad := Kademlia{NewRoutingTable(contact), &network, map[KademliaID][]byte{}}
-	go network.Listen(&kad)
-	if !kademlia.IsBootstrap() {
+
+	fmt.Println("My contact:", contact.String())
+	
+	isBoot, err := kademlia.IsBootstrap(kademlia.IP_PREFIX)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	if !isBoot {
 		kad.JoinNetwork()
 	}
-
+	
+	go network.Listen(&kad)
 	kademlia.CLIServer(&kad)
 	// temp code to send pings to bootstrap
 	for {

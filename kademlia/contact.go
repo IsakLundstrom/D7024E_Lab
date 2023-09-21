@@ -19,10 +19,16 @@ func NewContact(id *KademliaID, address string) Contact {
 	return Contact{id, address, nil}
 }
 
-func CreateMyContact() Contact {
+func CreateMyContact(prefix string) Contact {
 	var myId *KademliaID
 
-	if IsBootstrap() {
+	isBoot, err := IsBootstrap(prefix)
+	if err != nil {
+		log.Fatal(err)
+		return Contact{}
+	}
+
+	if isBoot {
 		fmt.Println("IS boostrap")
 		myId = NewKademliaID(BOOTSTRAP_ID)
 	} else {
@@ -30,7 +36,7 @@ func CreateMyContact() Contact {
 		myId = NewRandomKademliaID()
 	}
 
-	myIp, err := GetMyIp()
+	myIp, err := GetMyIp(prefix)
 	if err != nil {
 		log.Fatal(err)
 	}

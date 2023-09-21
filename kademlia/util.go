@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -16,20 +15,20 @@ const IP_PREFIX string = "10.10.0"
 const BOOTSTRAP_IP string = "10.10.0.2"
 const BOOTSTRAP_ID string = "0000000000000000000000000000000000000000"
 
-func IsBootstrap() bool {
-	myIp, err := GetMyIp()
+func IsBootstrap(prefix string) (bool, error) {
+	myIp, err := GetMyIp(prefix)
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
-	return myIp == BOOTSTRAP_IP
+	return myIp == BOOTSTRAP_IP, nil
 }
 
-func GetMyIp() (string, error) {
+func GetMyIp(prefix string) (string, error) {
 	containerHostname, _ := os.Hostname()
 	ips, _ := net.LookupIP(containerHostname)
 
 	for _, ip := range ips {
-		if strings.HasPrefix(ip.String(), IP_PREFIX) {
+		if strings.HasPrefix(ip.String(), prefix) {
 			return ip.String(), nil
 		}
 	}

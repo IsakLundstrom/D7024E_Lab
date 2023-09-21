@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -18,9 +17,6 @@ func TestRoutingTable(t *testing.T) {
 	rt.AddContact(closest)
 
 	contacts := rt.FindClosestContacts(NewKademliaID("2111111400000000000000000000000000000000"), 20)
-	for i := range contacts {
-		fmt.Println(contacts[i].String())
-	}
 
 	closestBucketIndex := rt.getBucketIndex(closest.ID)
 	furthestBucketIndex := rt.getBucketIndex(furthest.ID)
@@ -38,5 +34,20 @@ func TestRoutingTable(t *testing.T) {
 	}
 	if contacts[len(contacts)-1].ID != furthest.ID || contacts[len(contacts)-1].Address != furthest.Address {
 		t.Errorf("furthest should be [%s] but was [%s]", furthest.String(), contacts[len(contacts)-1].String())
+	}
+}
+
+func TestRoutingTableString(t *testing.T) {
+	rt := NewRoutingTable(NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000"))
+	rt.AddContact(NewContact(NewKademliaID("1111111100000000000000000000000000000000"), "localhost:8002"))
+
+	expectedString := "RoutingTable:\n"
+	expectedString += "  Me: {ID:ffffffff00000000000000000000000000000000 Address:localhost:8000 distance:<nil>}\n"
+	expectedString += "  Buckets:\n"
+	expectedString += "    Bucket 0:\n"
+	expectedString += "      List len: 1\n"
+
+	if rt.String() != expectedString {
+		t.Errorf("string output does not match expected")
 	}
 }

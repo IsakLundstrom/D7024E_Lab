@@ -78,7 +78,7 @@ func (rt RoutingTable) String() string {
 	for i, b := range rt.buckets {
 		if b != nil && b.list.Len() > 0 {
 			result += fmt.Sprintf("    Bucket %d:\n", i)
-			result += fmt.Sprintf("      List: %+v\n", b.list)
+			result += fmt.Sprintf("      List len: %+v\n", b.list.Len())
 		}
 	}
 
