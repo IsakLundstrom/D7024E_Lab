@@ -114,7 +114,7 @@ func (kademlia *Kademlia) iterativeFind(targetID *KademliaID, findType RPCType) 
 	finalRound := false
 	
 	fmt.Println("Start rounds / iterative process...")
-mainLoop:
+iterativeProcess:
 	for {
 		// New round
 		fmt.Println("New round started:", roundNr)
@@ -132,16 +132,16 @@ mainLoop:
 		foundCloserNode = false
 
 		// Listen for round responses
-	round:
+	listen:
 		for {
 			select {
 			case <-time.After(time.Until(roundEndTime)):
 				if finalRound {
 					fmt.Println("Final round over")
 					findNodeList.mutex.Lock()
-					break mainLoop
+					break iterativeProcess
 				}
-				break round
+				break listen
 			case rpcResponse := <-rpcChannel:
 				switch rpcResponse.Type {
 				case FIND_VALUE_RSP:
@@ -177,7 +177,7 @@ mainLoop:
 		done := findNodeList.checkKClosest()
 
 		if done {
-			break mainLoop
+			break iterativeProcess
 		}
 		findNodeList.mutex.Unlock()
 		roundNr++
@@ -187,7 +187,6 @@ mainLoop:
 	fmt.Println(kademlia.table.String())
 
 	// Final part to extract the closest nodes which repsonded
-	// findNodeList.mutex.Lock()
 	kClosest := ContactCandidates{findNodeList.responded}
 	kClosest.Sort()
 	numNodes := kClosest.Len()

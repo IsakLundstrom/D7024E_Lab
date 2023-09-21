@@ -28,22 +28,21 @@ func CLIServer(kademlia *Kademlia) {
 func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	defer connection.Close()
 
-	b := make([]byte, 512)
-	connection.Read(b)
-	args := strings.SplitN(string(b), " ", 2)
+	buffer := make([]byte, 512)
+	connection.Read(buffer)
+	args := strings.SplitN(string(buffer), " ", 2)
 	
-	fmt.Println("args[0]:", args[0])
+	fmt.Println("Recived a", args[0], "command, now parsing it...")
 	switch args[0] {
 	case "ping":
 		c := NewContact(NewKademliaID(BOOTSTRAP_ID), BOOTSTRAP_IP)
 		rpc := kademlia.network.SendPingMessage(kademlia, &c)
 		if rpc.Type == PONG {
-			connection.Write([]byte("PONG"))
+			connection.Write([]byte("Pong from " + kademlia.table.me.String()))
 		} else {
 			connection.Write([]byte("Connection timedout..."))
 		}
 	case "put":
-		fmt.Println("PUTTING")
 		res, status := kademlia.Store([]byte(args[1]))
 		if status == "FAIL" {
 			connection.Write([]byte(status))
@@ -51,16 +50,13 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 		}
 		connection.Write([]byte(res))
 	case "get":
-		fmt.Println("GETTING")
 		contacts, data := kademlia.LookupData(args[1])
-		fmt.Println("contact:", contacts, "data:", data, "data == ", data == "")
 		res := "Could not find the data"
 		if data != "" {
 			res = fmt.Sprintf("The node: %s\nThe data: %s", contacts[0].String(), data)
 		}
 		connection.Write([]byte(res))
 	case "exit":
-		fmt.Println("EXITING")
 		connection.Write([]byte("exiting"))
 		connection.Close()
 		os.Exit(0)
