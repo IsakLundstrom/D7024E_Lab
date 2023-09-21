@@ -17,7 +17,7 @@ func TestCli(t *testing.T) {
 	network := CreateNetwork(&contact)
 	node := CreateKademlia(&network)
 
-	testWords := [2]string{"put test", "get 01234567890123456789"}
+	testWords := [2]string{"put test", "get 0123456789ABCDEF0123456789ABCDEF01234567"}
 
 	for _, command := range testWords {
 		args := strings.SplitN(command, " ", 2)
