@@ -22,6 +22,9 @@ func TestFindNodeList(t *testing.T) {
 	r2.CalcDistance(target)
 	r3.CalcDistance(target)
 
+	k1 := NewContact(NewKademliaID("2222222300000000000000000000000000000000"), "localhost:8005")
+	k1.CalcDistance(target)
+
 	nodeList.responded = []Contact{r1, r2, r3}
 
 	if !nodeList.checkKClosest(3) {
@@ -57,6 +60,21 @@ func TestFindNodeList(t *testing.T) {
 			fmt.Println("    ", c.String())
 		}
 	} //TODO
+
+	nodeList.responded = []Contact{r1, r2, r3}
+	nodeList.queried = []Contact{c5}
+	nodeList.candidates = ContactCandidates{[]Contact{k1}}
+	if nodeList.checkKClosest(3) {
+		t.Errorf("checkKClosest failed!")
+		fmt.Println("contacts:")
+		for _, c := range nodeList.candidates.contacts {
+			fmt.Println("    ", c.String())
+		}
+		fmt.Println("responded:")
+		for _, c := range nodeList.responded {
+			fmt.Println("    ", c.String())
+		}
+	}
 
 	fmt.Println(len(nodeList.candidates.contacts))
 }

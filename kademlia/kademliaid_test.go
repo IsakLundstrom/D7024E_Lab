@@ -49,7 +49,7 @@ func TestInverse(t *testing.T) {
 	inverse := id1.InverseBitwise()
 
 	if !inverse.Equals(id2) {
-		t.Errorf("equals excpected different ones, got the same ones")
+		t.Errorf("equals excpected same ones, got different ones")
 	}
 
 }
