@@ -1,12 +1,17 @@
 package kademlia
 
 import (
+	"net"
+	"os"
 	"testing"
 )
 
 func TestIsBootstrap(t *testing.T) {
+	containerHostname, _ := os.Hostname()
+	ips, _ := net.LookupIP(containerHostname)
+
 	expected := false
-	isBoot, err := IsBootstrap(IP_PREFIX)
+	isBoot, err := IsBootstrap(ips[0].String())
 	if err != nil {
 		t.Errorf("got an error: %s", err)
 	}
@@ -24,8 +29,11 @@ func TestIsBootstrap(t *testing.T) {
 }
 
 func TestGetMyIp(t *testing.T) {
-	expectedIp := "10.10.0.1"
-	testIp, _ := GetMyIp(IP_PREFIX)
+	containerHostname, _ := os.Hostname()
+	ips, _ := net.LookupIP(containerHostname)
+
+	expectedIp := ips[0].String()
+	testIp, _ := GetMyIp(ips[0].String())
 	if expectedIp != testIp {
 		t.Errorf("expected ip %s but got %s", expectedIp, testIp)
 	}
