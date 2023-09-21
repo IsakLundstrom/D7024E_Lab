@@ -33,10 +33,10 @@ func TestRoutingTable(t *testing.T) {
 		t.Errorf("closest bucket index excpected [%d], got [%d]", len(rt.buckets)-1, furthestBucketIndex)
 	}
 
-	if contacts[0].String() != closest.String() {
+	if contacts[0].ID != closest.ID || contacts[0].Address != closest.Address {
 		t.Errorf("closest should be [%s] but was [%s]", closest.String(), contacts[0].String())
 	}
-	if contacts[len(contacts)-1].String() != furthest.String() {
+	if contacts[len(contacts)-1].ID != furthest.ID || contacts[len(contacts)-1].Address != furthest.Address {
 		t.Errorf("furthest should be [%s] but was [%s]", furthest.String(), contacts[len(contacts)-1].String())
 	}
 }
