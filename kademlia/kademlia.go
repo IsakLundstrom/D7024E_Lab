@@ -3,7 +3,6 @@ package kademlia
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 )
 
@@ -13,71 +12,14 @@ var alpha int = 3
 type Kademlia struct {
 	table   *RoutingTable
 	network *Network
-	store   map[string]StoreItem
-	storeMu sync.Mutex
-}
-
-type StoreItem struct {
-	Data     string
-	ExpireAt time.Time
+	store   DataStorage
 }
 
 func CreateKademlia(network *Network) Kademlia {
 	return Kademlia{
 		table:   NewRoutingTable(*network.myContact),
 		network: network,
-		store:   map[string]StoreItem{}}
-}
-
-// store data to the store, if key already exists, it will refresh the TTL for the data
-//
-// returns "ok" if data was stored or "refreshed" if data was refreshed
-func (kademlia *Kademlia) SetData(key string, data string) (item StoreItem, exist bool) {
-	kademlia.storeMu.Lock()
-	defer kademlia.storeMu.Unlock()
-
-	if item, exist := kademlia.store[key]; exist && time.Now().After(item.ExpireAt) {
-		// Update the TTL for an existing item
-		item.ExpireAt = time.Now().Add(DATA_TIME_TO_LIVE)
-		kademlia.store[key] = item
-		return item, true
-	}
-
-	expire := time.Now().Add(DATA_TIME_TO_LIVE)
-	storeItem := StoreItem{Data: data, ExpireAt: expire}
-	kademlia.store[key] = storeItem
-	return storeItem, false
-}
-
-// get data stored, returns empty string if data expired or do not exist
-func (kademlia *Kademlia) GetData(key string) (data string, exist bool) {
-	kademlia.storeMu.Lock()
-	defer kademlia.storeMu.Unlock()
-	item, exists := kademlia.store[key]
-	if !exists {
-		return "", false
-	}
-	if time.Now().After(item.ExpireAt) {
-		return "", false
-	}
-	item.ExpireAt = time.Now().Add(DATA_TIME_TO_LIVE)
-	kademlia.store[key] = item // refresh TTL
-	return item.Data, true
-}
-
-func (kademlia *Kademlia) CleanupExpiredItems() {
-	kademlia.storeMu.Lock()
-	defer kademlia.storeMu.Unlock()
-	fmt.Println("cleanup init")
-	currentTime := time.Now()
-	for key, item := range kademlia.store {
-		fmt.Println(item, currentTime.After(item.ExpireAt))
-		if currentTime.After(item.ExpireAt) {
-			fmt.Println("deleted: ", item.Data)
-			delete(kademlia.store, key)
-		}
-	}
-	fmt.Println("cleanup done")
+		store:   NewDataStorage()}
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
