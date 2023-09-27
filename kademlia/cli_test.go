@@ -1,37 +1,47 @@
 package kademlia
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"testing"
+	"time"
 )
 
-func TestCli(t *testing.T) {
-
-	mockServer, mockClient := net.Pipe()
-
+func setupNode() *Kademlia {
 	kademliaId := NewKademliaID("0000000000000000000000000000000000000000")
 	address := "localhost:8000"
 	contact := NewContact(kademliaId, address)
 	network := CreateNetwork(&contact)
 	node := CreateKademlia(&network)
+	return &node
+
+}
+
+func TestCliPut(t *testing.T) {
+
+	mockServer, mockClient := net.Pipe()
+
+	node := setupNode()
 
 	var savedHash string
-	testWords := [5]string{"put ", "put test", "get 0123456789ABCDEF0123456789ABCDEF01234567", "get hash", "ex "}
+	testWords := [5]string{"put test", "put ", "get 0123456789ABCDEF0123456789ABCDEF01234567", "get hash", "ex "}
 
 	for _, command := range testWords {
 		args := strings.SplitN(command, " ", 2)
 
-		go CliHandler(mockServer, &node)
+		go CliHandler(mockServer, node)
 
 		if command == "get hash" {
-			args[1] = savedHash
+			command = "get " + savedHash
 		}
 
 		mockClient.Write([]byte(command))
 
 		response := make([]byte, 512)
 		mockClient.Read(response)
+
+		time.Sleep(500 * time.Millisecond)
 
 		var expectedAnswer string
 		switch args[0] {
@@ -50,6 +60,8 @@ func TestCli(t *testing.T) {
 		if command == "put test" {
 			savedHash = string(response)
 		}
+
+		fmt.Printf("---------------command [%s] räspåns [%s] [%v]\n", command, string(response), response == nil)
 
 		if expectedAnswer != "not nil" && string(response) != expectedAnswer {
 			t.Errorf("Cli test fail for command [%s], expected [%s] but got [%s]", command, expectedAnswer, string(response))

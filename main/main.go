@@ -15,7 +15,7 @@ func main() {
 	kad := kademlia.CreateKademlia(&network)
 
 	fmt.Println("My contact:", contact.String())
-	
+
 	isBoot, err := kademlia.IsBootstrap(kademlia.IP_PREFIX)
 	if err != nil {
 		log.Fatal(err)
@@ -24,7 +24,14 @@ func main() {
 	if !isBoot {
 		kad.JoinNetwork()
 	}
-	
+
+	go func() {
+		for {
+			kad.CleanupExpiredItems()
+			time.Sleep(kademlia.DATA_CLEANUP_WAIT_TIME)
+		}
+	}()
+
 	go network.Listen(&kad)
 	kademlia.CLIServer(&kad)
 	// temp code to send pings to bootstrap
