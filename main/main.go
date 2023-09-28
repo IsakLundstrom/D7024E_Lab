@@ -25,13 +25,6 @@ func main() {
 		kad.JoinNetwork()
 	}
 
-	go func() {
-		for {
-			kad.CleanupExpiredItems()
-			time.Sleep(kademlia.DATA_CLEANUP_WAIT_TIME)
-		}
-	}()
-
 	go network.Listen(&kad)
 	kademlia.CLIServer(&kad)
 	// temp code to send pings to bootstrap

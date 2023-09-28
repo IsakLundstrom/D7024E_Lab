@@ -146,6 +146,7 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 	case FIND_VALUE_REQ:
 		fmt.Println("Find value request from", rpc.Sender.String())
 		data, exist := kademlia.store.GetData(rpc.TargetID.String())
+		fmt.Println("current store:", kademlia.store.store)
 		if exist {
 			fmt.Println("I had the data! Sending it back! hash:", rpc.TargetID.String(), " data:", data)
 			network.sendRsp(rpc.Sender.Address, RPC{FIND_VALUE_RSP, *network.myContact, rpc.TargetID, []byte(data), nil}, connection)

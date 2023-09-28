@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -27,7 +26,7 @@ func (storage *DataStorage) SetData(key string, data string) (item StoreItem, ex
 	storage.storeMu.Lock()
 	defer storage.storeMu.Unlock()
 
-	if item, exist := storage.store[key]; exist && time.Now().After(item.ExpireAt) {
+	if item, exist := storage.store[key]; exist {
 		// Update the TTL for an existing item
 		item.ExpireAt = time.Now().Add(DATA_TIME_TO_LIVE)
 		storage.store[key] = item
@@ -37,6 +36,7 @@ func (storage *DataStorage) SetData(key string, data string) (item StoreItem, ex
 	expire := time.Now().Add(DATA_TIME_TO_LIVE)
 	storeItem := StoreItem{Data: data, ExpireAt: expire}
 	storage.store[key] = storeItem
+	go storage.cleanupEvent(key)
 	return storeItem, false
 }
 
@@ -48,25 +48,22 @@ func (storage *DataStorage) GetData(key string) (data string, exist bool) {
 	if !exists {
 		return "", false
 	}
-	if time.Now().After(item.ExpireAt) {
-		return "", false
-	}
 	item.ExpireAt = time.Now().Add(DATA_TIME_TO_LIVE)
 	storage.store[key] = item // refresh TTL
 	return item.Data, true
 }
 
-func (storage *DataStorage) CleanupExpiredItems() {
-	storage.storeMu.Lock()
-	defer storage.storeMu.Unlock()
-	fmt.Println("cleanup init")
-	currentTime := time.Now()
-	for key, item := range storage.store {
-		fmt.Println(item, currentTime.After(item.ExpireAt))
-		if currentTime.After(item.ExpireAt) {
-			fmt.Println("deleted: ", item.Data)
+func (storage *DataStorage) cleanupEvent(key string) {
+	time.Sleep(DATA_TIME_TO_LIVE + 1*time.Millisecond) // 1ms to avoid race condition
+	for {
+		storage.storeMu.Lock()
+		item := storage.store[key]
+		if time.Now().After(item.ExpireAt) {
 			delete(storage.store, key)
+			storage.storeMu.Unlock()
+			return
 		}
+		storage.storeMu.Unlock()
+		time.Sleep(time.Until(item.ExpireAt) + 1*time.Millisecond) // 1ms to avoid race condition
 	}
-	fmt.Println("cleanup done")
 }
