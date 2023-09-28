@@ -51,6 +51,16 @@ func (kademlia *Kademlia) Store(data []byte) (string, string) {
 	hash := NewKademliaID(GetHash(data))
 	contacts := kademlia.LookupContact(hash)
 
+	kademlia.table.me.CalcDistance(hash)
+	meCloser := len(contacts) == 0 || kademlia.table.me.Less(&contacts[len(contacts)-1])
+
+	if meCloser {
+		if len(contacts) == k {
+			contacts = contacts[:len(contacts)-1]
+		}
+		contacts = append(contacts, kademlia.table.me)
+	}
+
 	okCounter := 0
 	hasCounter := 0
 	failCounter := 0
