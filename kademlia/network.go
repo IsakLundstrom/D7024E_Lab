@@ -49,12 +49,12 @@ func (network *Network) SendPingMessage(kademlia *Kademlia, contact *Contact) RP
 }
 
 func (network *Network) SendRefreshMessage(kademlia *Kademlia, contact *Contact, hash KademliaID) RPC {
-	fmt.Println("Refreshing data with hash", hash, "at", contact)
+	fmt.Println("Refreshing data with hash", hash.String(), "at", contact)
 	return network.sendReq(kademlia, contact.Address, RPC{STORE_REQ, *network.myContact, hash, nil, nil})
 }
 
 func (network *Network) SendStoreReqMessage(kademlia *Kademlia, contact *Contact, hash KademliaID, data []byte) RPC {
-	fmt.Println("Storing", data, "with hash", hash, "at", contact)
+	fmt.Println("Storing", string(data), "with hash", hash.String(), "at", contact)
 	return network.sendReq(kademlia, contact.Address, RPC{STORE_REQ, *network.myContact, hash, data, nil})
 }
 
@@ -133,17 +133,20 @@ func (network *Network) handleReq(rpc RPC, kademlia *Kademlia, connection net.Co
 		_, exist := kademlia.store.GetData(rpc.TargetID.String())
 
 		if rpc.Data == nil {
+			// Recieved refresh msg 
 			if exist {
+				// if has data, refresh it and send back 'has'
 				storeStatus = "has"
-				kademlia.store.refreshData(rpc.TargetID.String())
+				kademlia.store.RefreshData(rpc.TargetID.String())
 			} else {
-				// kademlia.store.SetData(rpc.TargetID.String(), string(rpc.Data))
+				// if hasn't data, send back 'ok' to tell sender to send the data
 				storeStatus = "ok"
 			}
-			fmt.Println("refresh request from", rpc.Sender.String(), "storeStatus:", storeStatus)
+			fmt.Println("Refresh request from", rpc.Sender.String(), "storeStatus:", storeStatus)
 		} else {
-			kademlia.store.SetData(rpc.TargetID.String(), string(rpc.Data))
+			// Recieved store msg with data -> store it
 			storeStatus = "stored"
+			kademlia.store.SetData(rpc.TargetID.String(), string(rpc.Data))
 			fmt.Println("Store request from", rpc.Sender.String(), "storeStatus:", storeStatus)
 		}
 

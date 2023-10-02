@@ -70,12 +70,15 @@ func (kademlia *Kademlia) Store(data []byte) (string, string) {
 		go func(c Contact) {
 
 			rpcResponse := kademlia.network.SendRefreshMessage(kademlia, &c, *hash)
-			if { //todo continue here
 
-			}
-
-			rpcResponse = kademlia.network.SendStoreReqMessage(kademlia, &c, *hash, data)
 			if rpcResponse.Type == STORE_RSP {
+				switch string(rpcResponse.Data) {
+				case "ok":
+					rpcResponse = kademlia.network.SendStoreReqMessage(kademlia, &c, *hash, data)
+				case "has":
+				default:
+					log.Printf("Unexpected rpcResponse '%+v' when trying to store '%s' with hash '%s'\n", rpcResponse, string(data), hash.String())
+				}
 				rpcChannel <- rpcResponse
 			} else {
 				log.Println("Recived response type:", rpcResponse.Type, "but expected:", STORE_RSP)
@@ -93,8 +96,9 @@ listen:
 			fmt.Println("Store wait for responses timedout!")
 			break listen
 		case rpcResponse := <-rpcChannel:
+			fmt.Println("rpcResponse:", rpcResponse)
 			switch string(rpcResponse.Data) {
-			case "ok":
+			case "stored":
 				okCounter++
 			case "has":
 				hasCounter++
