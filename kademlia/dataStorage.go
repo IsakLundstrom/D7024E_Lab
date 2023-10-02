@@ -53,6 +53,10 @@ func (storage *DataStorage) GetData(key string) (data string, exist bool) {
 	return item.Data, true
 }
 
+func (storage *DataStorage) RefreshData(key string) {
+	storage.GetData(key)
+}
+
 func (storage *DataStorage) cleanupEvent(key string) {
 	time.Sleep(DATA_TIME_TO_LIVE + 1*time.Millisecond) // 1ms to avoid race condition
 	for {

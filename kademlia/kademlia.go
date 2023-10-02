@@ -68,7 +68,13 @@ func (kademlia *Kademlia) Store(data []byte) (string, string) {
 	for _, c := range contacts {
 
 		go func(c Contact) {
-			rpcResponse := kademlia.network.SendStoreReqMessage(kademlia, &c, *hash, data)
+
+			rpcResponse := kademlia.network.SendRefreshMessage(kademlia, &c, *hash)
+			if { //todo continue here
+
+			}
+
+			rpcResponse = kademlia.network.SendStoreReqMessage(kademlia, &c, *hash, data)
 			if rpcResponse.Type == STORE_RSP {
 				rpcChannel <- rpcResponse
 			} else {
