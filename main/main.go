@@ -25,6 +25,8 @@ func main() {
 		kad.JoinNetwork()
 	}
 
+	go kademlia.StartAPI(&kad)
+
 	go network.Listen(&kad)
 	kademlia.CLIServer(&kad)
 	// temp code to send pings to bootstrap
