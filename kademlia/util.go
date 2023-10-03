@@ -13,6 +13,7 @@ import (
 const BOOTSTRAP_IP string = "10.10.0.2"
 const BOOTSTRAP_ID string = "0000000000000000000000000000000000000000"
 const DATA_TIME_TO_LIVE time.Duration = 20 * time.Second
+const STORE_REFRESH_TIME time.Duration = 15 * time.Second
 const IP_PREFIX string = "10.10.0"
 const PORT string = "4000"
 const PROTOCOL string = "tcp"

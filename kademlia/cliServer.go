@@ -29,8 +29,12 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 	defer connection.Close()
 
 	buffer := make([]byte, 512)
-	connection.Read(buffer)
-	args := strings.SplitN(string(buffer), " ", 2)
+	bytesRead, err := connection.Read(buffer)
+	if err != nil {
+        log.Println("Error reading data:", err.Error())
+        return
+    }
+	args := strings.SplitN(string(buffer[:bytesRead]), " ", 2)
 	
 	fmt.Println("Recived a", args[0], "command, now parsing it...")
 	switch args[0] {
@@ -43,9 +47,9 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 			connection.Write([]byte("Connection timedout..."))
 		}
 	case "put":
-		res, status := kademlia.Store([]byte(args[1]))
-		if status == "FAIL" {
-			connection.Write([]byte(status))
+		res, err := kademlia.Store([]byte(args[1]))
+		if err != nil {
+			connection.Write([]byte(err.Error()))
 			return
 		}
 		connection.Write([]byte(res))
@@ -60,6 +64,18 @@ func CliHandler(connection net.Conn, kademlia *Kademlia) {
 		connection.Write([]byte("exiting"))
 		connection.Close()
 		os.Exit(0)
+	case "forget":
+		hash := args[1]
+		kademlia.refreshMap.mutex.Lock()
+		ch, exist := kademlia.refreshMap.rMap[hash]
+		if exist {
+			ch <- 0
+			delete(kademlia.refreshMap.rMap, hash)
+			connection.Write([]byte("Deleted the data with hash " + hash))
+		} else {			
+			connection.Write([]byte("Data with hash " + hash + " doesn't exist"))
+		}
+		kademlia.refreshMap.mutex.Unlock()
 	default:
 		fmt.Println("Invalid input!")
 	}

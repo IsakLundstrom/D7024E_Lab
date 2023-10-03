@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -10,16 +11,18 @@ var k int = 20
 var alpha int = 3
 
 type Kademlia struct {
-	table   *RoutingTable
-	network *Network
-	store   DataStorage
+	table   	*RoutingTable
+	network 	*Network
+	store   	DataStorage
+	refreshMap	RefreshMap
 }
 
 func CreateKademlia(network *Network) Kademlia {
 	return Kademlia{
-		table:   NewRoutingTable(*network.myContact),
-		network: network,
-		store:   NewDataStorage()}
+		table:   	NewRoutingTable(*network.myContact),
+		network:	network,
+		store:   	NewDataStorage(),
+		refreshMap: RefreshMap{rMap: map[string](chan int){}}}
 }
 
 func (kademlia *Kademlia) JoinNetwork() {
@@ -45,7 +48,37 @@ func (kademlia *Kademlia) LookupData(hash string) ([]Contact, string) {
 	return kademlia.iterativeFind(NewKademliaID(hash), FIND_VALUE_REQ)
 }
 
-func (kademlia *Kademlia) Store(data []byte) (string, string) {
+func (kademlia *Kademlia) Store(data []byte) (string, error) { 
+	res, err := kademlia.StoreHelp(data)
+
+	go func(data []byte){
+		hash := GetHash(data)
+		kademlia.refreshMap.mutex.Lock()
+		ch, exist := kademlia.refreshMap.rMap[hash]
+		if exist {
+			ch <- 0
+		} else {
+			ch = make(chan int)
+			kademlia.refreshMap.rMap[hash] = ch
+		}
+		kademlia.refreshMap.mutex.Unlock()
+
+		for {
+			select {
+			case <- time.After(STORE_REFRESH_TIME):
+				fmt.Println("REFRESHING:", string(data))
+				kademlia.StoreHelp(data)
+			case <- ch:				
+				fmt.Println("STOPPED REFRESHING:", string(data))
+				return
+			}
+		}
+	}(data)
+
+	return res, err
+}
+
+func (kademlia *Kademlia) StoreHelp(data []byte) (string, error) {
 	rpcChannel := make(chan RPC)
 
 	hash := NewKademliaID(GetHash(data))
@@ -111,9 +144,9 @@ listen:
 	fmt.Println("sentTo", len(contacts), "okCounter:", okCounter, "hasCounter:", hasCounter, "failCounter:", failCounter)
 
 	if len(contacts) == okCounter+hasCounter {
-		return hash.String(), "OK"
+		return hash.String(),  nil
 	}
-	return hash.String(), "FAIL"
+	return hash.String(), errors.New("Error while trying to store")
 }
 
 func (kademlia *Kademlia) iterativeFind(targetID *KademliaID, findType RPCType) ([]Contact, string) {

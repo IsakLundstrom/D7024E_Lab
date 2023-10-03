@@ -52,6 +52,20 @@ func main() {
 		fmt.Println("exit call...")
 		CliSend("exit ")
 
+	case "forget":
+		if len(args) != 3 {
+			fmt.Println("Need a hash to know what to forget")
+			return
+		}
+		_, err := hex.DecodeString(args[2])
+		if err != nil || len(args[2]) != 40 {
+			fmt.Println("Invalid hash (need 20 hex values)")
+			return
+		}
+		fmt.Println("forget call...")
+
+		CliSend("forget " + args[2])
+
 	default:
 		fmt.Println("Invalid input!")
 	}
@@ -59,13 +73,17 @@ func main() {
 
 func CliSend(data string) {
 	connection, err := net.Dial("unix", "/tmp/echo.sock")
+	defer connection.Close()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	connection.Write([]byte(data))
-	response := make([]byte, 512)
-	connection.Read(response)
-	fmt.Println(string(response))
-	defer connection.Close()
+	response := make([]byte, 1024)
+	bytesRead, err := connection.Read(response)
+	if err != nil {
+        log.Println("Error reading data:", err.Error())
+        return
+    }
+	fmt.Println(string(response[:bytesRead]))
 }
